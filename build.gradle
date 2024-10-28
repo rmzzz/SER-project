@@ -17,7 +17,7 @@ plugins {
     id 'jacoco'
 
     // JavaFX
-    id 'org.openjfx.javafxplugin' version '0.0.8'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
 jar {
