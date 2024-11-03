@@ -223,27 +223,23 @@ public class RouteControllerTest {
     }
 
     @Test
-    void setRouteTest() {
-        try {
-            Model model = new Model(new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/smallMapKastrup.osm")));
-            MapCanvas canvas = new MapCanvas();
-            canvas.setModelWithoutReset(model);
-            routeController = new RouteController(canvas);
-            routeController.setDijkstra(31471020, 280177408, "Car", true, true, true);
-            routeController.setRoute(true);
+    void setRouteTest() throws Exception {
+        Model model = new Model(new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/smallMapKastrup.osm")));
+        MapCanvas canvas = new MapCanvas();
+        canvas.setModelWithoutReset(model);
+        routeController = new RouteController(canvas);
+        routeController.setDijkstra(31471020, 280177408, "Car", true, true, true);
+        routeController.setRoute(true);
 
-            var actualRoute = (ArrayList<Edge>) routeController.getRoute();
-            var actualInstructions = routeController.getInstructions();
-            var actualDijkstra = routeController.getDijkstra().getAllEdgeTo();
-            var actualDrawableRoute = routeController.getDrawableRoute();
+        var actualRoute = (ArrayList<Edge>) routeController.getRoute();
+        var actualInstructions = routeController.getInstructions();
+        var actualDijkstra = routeController.getDijkstra().getAllEdgeTo();
+        var actualDrawableRoute = routeController.getDrawableRoute();
 
-            Assertions.assertEquals(5, actualRoute.size());
-            Assertions.assertEquals(3, actualInstructions.size());
-            Assertions.assertEquals(8, actualDijkstra.size());
-            Assertions.assertEquals(12, actualDrawableRoute.getCoords().length);
-        } catch (Exception e) {
-            Assertions.fail();
-        }
+        Assertions.assertEquals(5, actualRoute.size());
+        Assertions.assertEquals(3, actualInstructions.size());
+        Assertions.assertEquals(8, actualDijkstra.size());
+        Assertions.assertEquals(12, actualDrawableRoute.getCoords().length);
     }
 
     @Test

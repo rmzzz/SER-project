@@ -1,5 +1,6 @@
-    # Ignore Gradle project-specific cache directory
+# Ignore Gradle project-specific cache directory
 .gradle
+gradle/wrapper/gradle-wrapper.jar
 
 # Ignore Gradle build output directory
 build
@@ -20,6 +21,12 @@ bin/*
 .idea/**/dictionaries
 .idea/**/shelf
 .idea/*
+
+.vscode
+.project
+.idea
+*.iml
+
 
 # Generated files
 .idea/**/contentModel.xml
