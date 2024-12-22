@@ -8,6 +8,7 @@ import bong.routeFinding.Edge;
 import bong.routeFinding.Graph;
 import bong.routeFinding.Street;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -222,6 +223,7 @@ public class RouteControllerTest {
         }
     }
 
+    @Disabled("As long as test .osm resource unavailable")
     @Test
     void setRouteTest() throws Exception {
         Model model = new Model(new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/smallMapKastrup.osm")));
@@ -242,6 +244,7 @@ public class RouteControllerTest {
         Assertions.assertEquals(12, actualDrawableRoute.getCoords().length);
     }
 
+    @Disabled("As long as test .osm resource unavailable")
     @Test
     void clearRouteTest() {
         try {

@@ -3,10 +3,12 @@ package bong.OSMReader;
 import bong.canvas.LinePath;
 import bong.canvas.Type;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Disabled("As long as test .osm resource unavailable")
 public class OSMReaderTest {
 
     @Test
