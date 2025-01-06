@@ -36,8 +36,6 @@ class FileControllerTest {
         }
     }
 
-    // TODO Ramiz: fix FileController and enable this test
-    @Disabled("FileController uses hardcoded directory path which is not available in test environment")
     @Test
     public void testLoadZip() {
         File file = new File(getClass().getClassLoader().getResource("bong/demozip.zip").getFile());

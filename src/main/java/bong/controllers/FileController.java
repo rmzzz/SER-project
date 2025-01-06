@@ -24,8 +24,7 @@ public class FileController {
         byte[] buffer = new byte[1024];
         ZipInputStream zis = new ZipInputStream(new FileInputStream(file.getAbsolutePath()));
         ZipEntry zipEntry = zis.getNextEntry();
-        String destFolder = System.getProperty("user.home") + File.separator + "Documents";
-        File destDir = new File(destFolder);
+        File destDir = getDataDir();
 
         while (zipEntry != null) {
             File newFile = new File(destDir, zipEntry.getName());
@@ -41,8 +40,17 @@ public class FileController {
         zis.closeEntry();
         zis.close();
 
-        return new File(destFolder + File.separator + fileName);
+        return new File(destDir, fileName);
+    }
 
+    public static File getDataDir() {
+        String userHome = System.getProperty("user.home");
+        String dirName = System.getProperty("bong.dir", userHome + File.separator + "Documents");
+        return new File(dirName).getAbsoluteFile();
+    }
+
+    public static File getDataFile(String fileName) {
+        return new File(getDataDir(), fileName);
     }
 
 }

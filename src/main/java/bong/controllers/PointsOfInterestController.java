@@ -53,8 +53,8 @@ public class PointsOfInterestController {
     }
 
     public void savePointsOfInterest() {
-        String destFolder = System.getProperty("user.home") + File.separator + "Documents" + File.separator + "POI.bin";
-        File file = new File(destFolder);
+        File dataDir = FileController.getDataDir();
+        File file = new File(dataDir, "POI.bin");
         try {
             FileController.saveBinary(file, PointsOfInterestController.getPointsOfInterest());
         } catch (IOException e) {
@@ -86,10 +86,11 @@ public class PointsOfInterestController {
     public void loadPointsOfInterest() {
         ArrayList<PointOfInterest> list = new ArrayList<>();
         try {
-            InputStream is = new FileInputStream(System.getProperty("user.home") + File.separator + "Documents" + File.separator + "POI.bin");
+            File file = FileController.getDataFile("POI.bin");
+            InputStream is = new FileInputStream(file);
             list = (ArrayList<PointOfInterest>) FileController.loadBinary(is);
         } catch (Exception ignored){
-
+            // TODO Ramiz: log error
         }
         setPOI(list);
     }
