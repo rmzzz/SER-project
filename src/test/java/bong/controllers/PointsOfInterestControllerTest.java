@@ -39,8 +39,6 @@ class PointsOfInterestControllerTest {
         Assertions.assertEquals(0, PointsOfInterestController.getPointsOfInterest().size());
     }
 
-    // TODO Ramiz: fix PointsOfInterestController and enable this test
-    @Disabled("PointsOfInterestController uses hardcoded directory path which is not available in test environment")
     @Test
     void removePOI() {
         PointOfInterest poi2 = new PointOfInterest(2, 2, "test2");
@@ -57,19 +55,17 @@ class PointsOfInterestControllerTest {
         Assertions.assertEquals(false, poic.POIContains(2,2));
     }
 
-    // TODO Ramiz: fix PointsOfInterestController and enable this test
-    @Disabled("PointsOfInterestController uses hardcoded directory path which is not available in test environment")
     @Test
     void savePointsOfInterest() {
         poic.savePointsOfInterest();
         long currTime = System.currentTimeMillis();
 
         try {
-            InputStream is = new FileInputStream(System.getProperty("user.home") + File.separator + "Documents" + File.separator + "POI.bin");
+            File file = FileController.getDataFile("POI.bin");
+            InputStream is = new FileInputStream(file);
             ArrayList<PointOfInterest> list = (ArrayList<PointOfInterest>) FileController.loadBinary(is);
             Assertions.assertEquals(poi.getName(), list.get(0).getName());
 
-            File file = new File(System.getProperty("user.home") + File.separator + "Documents" + File.separator + "POI.bin");
             if (file.lastModified() + 10000 < currTime) {
                 Assertions.fail();
             }
@@ -79,8 +75,6 @@ class PointsOfInterestControllerTest {
         }
     }
 
-    // TODO Ramiz: fix PointsOfInterestController and enable this test
-    @Disabled("PointsOfInterestController uses hardcoded directory path which is not available in test environment")
     @Test
     void addPointOfInterest() {
         poic.addPointOfInterest(new Point2D(3,4), java.util.Optional.of("testName"));
@@ -93,8 +87,6 @@ class PointsOfInterestControllerTest {
         Assertions.assertEquals(2, PointsOfInterestController.getPointsOfInterest().size());
     }
 
-    // TODO Ramiz: fix PointsOfInterestController and enable this test
-    @Disabled("PointsOfInterestController uses hardcoded directory path which is not available in test environment")
     @Test
     void loadPointsOfInterest() {
         savePointsOfInterest();
@@ -105,7 +97,7 @@ class PointsOfInterestControllerTest {
         Assertions.assertEquals(poi.getLon(), PointsOfInterestController.getPointsOfInterest().get(0).getLon());
 
         try {
-            File file = new File(System.getProperty("user.home") + File.separator + "Documents" + File.separator + "POI.bin");
+            File file = FileController.getDataFile("POI.bin");
             file.delete();
             poic.loadPointsOfInterest();
         } catch (Exception e) {
