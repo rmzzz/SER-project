@@ -3,12 +3,11 @@ package bong.OSMReader;
 import bong.canvas.LinePath;
 import bong.canvas.Type;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled("As long as test .osm resource unavailable")
+//@Disabled("As long as test .osm resource unavailable")
 public class OSMReaderTest {
 
     @Test
@@ -162,17 +161,17 @@ public class OSMReaderTest {
 
     @Test
     void parseCityTest() {
-        OSMReader reader = new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/koldingCity.osm"));
+        OSMReader reader = new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/pottehuseCity.osm"));
 
-        assertEquals("Kolding", reader.getCities().get(0).getName());
+        assertEquals("Pottehuse", reader.getCities().get(0).getName());
         assertEquals(1, reader.getCities().size());
 
         reader.parseCity("place", "town");
-        assertEquals("Kolding", reader.getCities().get(0).getName());
+        assertEquals("Pottehuse", reader.getCities().get(0).getName());
         assertEquals(1, reader.getCities().size());
 
         reader.parseCity("place", "hamlet");
-        assertEquals("Kolding", reader.getCities().get(0).getName());
+        assertEquals("Pottehuse", reader.getCities().get(0).getName());
         assertEquals(1, reader.getCities().size());
 
         reader.setPreviousName("TestCity");
@@ -190,13 +189,16 @@ public class OSMReaderTest {
 
         for (var a : reader.getGraph().getAdj().entrySet()) {
             for (var b : a.getValue()) {
-                if (b.getStreet().getName().equals("RestrictedRoad")) {
+                if (b.getStreet().getName() == null){
+                    continue;
+                }
+                if (b.getStreet().getName().equals("SpengergassePermissive")) {
                     Assertions.fail();
                 }
-                if (b.getStreet().getName().equals("NotRestricted1")) {
+                if (b.getStreet().getName().equals("Lidmanskygasse")) {
                     firstFound = true;
                 }
-                if (b.getStreet().getName().equals("NotRestricted1")) {
+                if (b.getStreet().getName().equals("Paulitschgasse")) {
                     secondFound = true;
                 }
             }
@@ -208,14 +210,16 @@ public class OSMReaderTest {
     void parseStreetLivingStreetTest() {
         OSMReader reader = new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/streetTest.osm"));
         reader.parseStreet();
-
+        int maxSpeed = 0;
         for (var a : reader.getGraph().getAdj().entrySet()) {
             for (var b : a.getValue()) {
-                if (b.getStreet().getName().equals("Horskærvej")) {
-                    assertEquals(30, b.getStreet().getMaxspeed());
+                if (b.getStreet().getName() != null && b.getStreet().getName().equals("Lidmanskygasse")) {
+                    maxSpeed = b.getStreet().getMaxspeed();
                 }
             }
         }
+        assertEquals(30, maxSpeed);
+
     }
 
     @Test
@@ -223,13 +227,15 @@ public class OSMReaderTest {
         OSMReader reader = new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/streetTest.osm"));
         reader.parseStreet();
 
+        int maxSpeed = 0;
         for (var a : reader.getGraph().getAdj().entrySet()) {
             for (var b : a.getValue()) {
-                if (b.getStreet().getName().equals("TestMotorway")) {
-                    assertEquals(130, b.getStreet().getMaxspeed());
+                if (b.getStreet().getName() != null && b.getStreet().getName().equals("A1")) {
+                    maxSpeed = b.getStreet().getMaxspeed();
                 }
             }
         }
+        assertEquals(130, maxSpeed);
     }
 
 }
