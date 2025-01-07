@@ -16,7 +16,6 @@ import javafx.geometry.Point2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -76,11 +75,8 @@ public class MainController {
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream("bong/" + mapName + ".bin");
             setModelFromBinary(is);
-        } catch (Exception e){
-            Alert alert = new Alert(AlertType.ERROR);
-            alert.setHeaderText("An error occured");
-            alert.setContentText("Failed to load map of " + mapName);
-            alert.showAndWait();
+        } catch (Exception e) {
+            AlertController.showError("An error occurred", "Failed to load map of " + mapName, e);
         }
     } 
     
@@ -215,11 +211,9 @@ public class MainController {
         });
 
         devtools.setOnAction(e -> {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setHeaderText("Open dev tools?");
-            alert.setContentText("Dev tools are only supposed to be used by developers or advanced users");
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.get() == ButtonType.OK) {
+            Optional<ButtonType> result = AlertController.showConfirmation("Open dev tools?",
+                    "Dev tools are only supposed to be used by developers or advanced users");
+            if (result.isPresent() && result.get() == ButtonType.OK) {
                 openDevTools();
             }
         });
@@ -580,10 +574,7 @@ public class MainController {
             inversedStart = canvas.getTrans().inverseTransform(lastMouse.getX(), lastMouse.getY());
             inversedEnd = canvas.getTrans().inverseTransform(end.getX(), end.getY());
         } catch (NonInvertibleTransformException e) {
-            Alert alert = new Alert(AlertType.ERROR);
-            alert.setContentText("Troels promised this should not have happened... :'-(");
-            alert.setHeaderText("not cool bro, wtf?");
-            alert.showAndWait();
+            AlertController.showError("Unexpected error", "Could not zoom to area", e);
         }
         Point2D centerPoint = new Point2D((inversedEnd.getX() + inversedStart.getX()) / 2, (inversedEnd.getY() + inversedStart.getY()) / 2);
 
@@ -746,17 +737,12 @@ public class MainController {
             fileChooser.getExtensionFilters().add(extFilter);
             fileChooser.setInitialFileName("myMap");
             File file = fileChooser.showSaveDialog(stage);
-            if(file != null){
+            if (file != null) {
                 FileController.saveBinary(file, model);
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setHeaderText("Saved successfully");
-                alert.showAndWait();
+                AlertController.showInfo("Saved successfully");
             }
-        } catch (Exception exception) {
-            Alert alert = new Alert((Alert.AlertType.ERROR));
-            alert.setHeaderText("Something unexpected happened, please try again");
-            alert.showAndWait();
-            exception.printStackTrace();
+        } catch (Exception ex) {
+            AlertController.showError("Something unexpected happened, please try again", null, ex);
         }
     }
 
@@ -777,19 +763,13 @@ public class MainController {
                 return true;
             } 
             return false;
-        } catch(FileTypeNotSupportedException exception) {
-            Alert alert = new Alert((Alert.AlertType.ERROR));
-            alert.setHeaderText("File type not supported: " + exception.getFileType());
-            alert.showAndWait();
+        } catch (FileTypeNotSupportedException ex) {
+            AlertController.showError("File type not supported",
+                    "File type not supported: " + ex.getFileType(), ex);
             return false;
-        } catch (NullPointerException exception){
-            exception.printStackTrace();
-            return false;
-        } catch (Exception exception) {
-            Alert alert = new Alert((Alert.AlertType.ERROR));
-            alert.setHeaderText("Something unexpected happened, please try again");
-            alert.showAndWait();
-            exception.printStackTrace();
+        } catch (Exception ex) {
+            AlertController.showError("Unexpected error",
+                    "Something unexpected happened, please try again", ex);
             return false;
         }
     }

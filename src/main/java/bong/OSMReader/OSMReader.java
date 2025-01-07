@@ -2,11 +2,10 @@ package bong.OSMReader;
 
 import bong.addressparser.Address;
 import bong.canvas.*;
+import bong.controllers.AlertController;
 import bong.routeFinding.Edge;
 import bong.routeFinding.Graph;
 import bong.routeFinding.Street;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -153,10 +152,8 @@ public class OSMReader {
                 }
             }
         } catch (XMLStreamException e) {
-            Alert alert = new Alert(AlertType.ERROR);
-            alert.setHeaderText("An unexpected error occured while loading OSM file");
-            alert.setContentText("Please verify the file integrity, or attempt loading another file");
-            alert.showAndWait();
+            AlertController.showError("An unexpected error occurred while loading OSM file",
+                    "Please verify the file integrity, or attempt loading another file", e);
         }
 
         for (var entry : graph.getAdj().entrySet()) {
