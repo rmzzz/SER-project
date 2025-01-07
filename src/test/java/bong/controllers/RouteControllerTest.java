@@ -223,14 +223,13 @@ public class RouteControllerTest {
         }
     }
 
-    @Disabled("As long as test .osm resource unavailable")
     @Test
     void setRouteTest() throws Exception {
-        Model model = new Model(new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/smallMapKastrup.osm")));
+        Model model = new Model(new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/smallMapStmaz.osm")));
         MapCanvas canvas = new MapCanvas();
         canvas.setModelWithoutReset(model);
         routeController = new RouteController(canvas);
-        routeController.setDijkstra(31471020, 280177408, "Car", true, true, true);
+        routeController.setDijkstra(11654496977L, 1677959389L, "Car", true, true, true);
         routeController.setRoute(true);
 
         var actualRoute = (ArrayList<Edge>) routeController.getRoute();
@@ -238,21 +237,20 @@ public class RouteControllerTest {
         var actualDijkstra = routeController.getDijkstra().getAllEdgeTo();
         var actualDrawableRoute = routeController.getDrawableRoute();
 
-        Assertions.assertEquals(5, actualRoute.size());
+        Assertions.assertEquals(34, actualRoute.size());
         Assertions.assertEquals(3, actualInstructions.size());
-        Assertions.assertEquals(8, actualDijkstra.size());
-        Assertions.assertEquals(12, actualDrawableRoute.getCoords().length);
+        Assertions.assertEquals(92, actualDijkstra.size());
+        Assertions.assertEquals(70, actualDrawableRoute.getCoords().length);
     }
 
-    @Disabled("As long as test .osm resource unavailable")
     @Test
     void clearRouteTest() {
         try {
-            Model model = new Model(new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/smallMapKastrup.osm")));
+            Model model = new Model(new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/smallMapStmaz.osm")));
             MapCanvas canvas = new MapCanvas();
             canvas.setModelWithoutReset(model);
             routeController = new RouteController(canvas);
-            routeController.setDijkstra(31471020, 280177408, "Car", true, true, true);
+            routeController.setDijkstra(11654496977L, 1677959389L, "Car", true, true, true);
             routeController.setRoute(true);
             routeController.clearRoute();
 

@@ -11,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class ModelTest {
 
-    @Disabled("As long as test .osm resource unavailable")
     @Test
     public void modelTest() throws FileNotFoundException {
         OSMReader osmReader = new OSMReader(

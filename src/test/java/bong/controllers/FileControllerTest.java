@@ -1,5 +1,7 @@
 package bong.controllers;
 
+import bong.OSMReader.OSMReader;
+import bong.OSMReader.Model;
 import bong.canvas.PointOfInterest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
@@ -11,7 +13,6 @@ import java.util.ArrayList;
 class FileControllerTest {
     FileController fileController = new FileController();
 
-    @Disabled("As long as test .bin resource unavailable")
     @Test
     public void testLoadBinary() {
         try {
@@ -19,9 +20,9 @@ class FileControllerTest {
             ArrayList<PointOfInterest> actual = (ArrayList<PointOfInterest>) FileController.loadBinary(is);
             ArrayList<PointOfInterest> expected = new ArrayList<>();
 
-            PointOfInterest poi1 = new PointOfInterest(1388618.0f, -7490362.0f, "punkt1");
-            PointOfInterest poi2 = new PointOfInterest(1380238.8f, -7502516.0f, "punkt2");
-            PointOfInterest poi3 = new PointOfInterest(1409182.8f, -7483031.5f, "punkt3");
+            PointOfInterest poi1 = new PointOfInterest(1401871.2f, -7492294.5f, "poi2");
+            PointOfInterest poi2 = new PointOfInterest(1404316.9f, -7497816.5f, "poi3");
+            PointOfInterest poi3 = new PointOfInterest(1393406.4f, -7495392.0f, "poi1");
             expected.add(poi1);
             expected.add(poi2);
             expected.add(poi3);
