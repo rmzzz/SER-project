@@ -1,5 +1,6 @@
 package bong.controllers;
 
+import bong.exceptions.ApplicationException;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -20,6 +21,10 @@ public class AlertController {
             }
             alert.showAndWait();
         }
+    }
+
+    public static void showError(ApplicationException appError) {
+        showError(appError.getHeaderText(), appError.getContentText(), appError.getCause());
     }
 
     public static void showInfo(String text) {

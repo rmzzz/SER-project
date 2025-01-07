@@ -2,7 +2,7 @@ package bong.OSMReader;
 
 import bong.addressparser.Address;
 import bong.canvas.*;
-import bong.controllers.AlertController;
+import bong.exceptions.ApplicationException;
 import bong.routeFinding.Edge;
 import bong.routeFinding.Graph;
 import bong.routeFinding.Street;
@@ -152,7 +152,7 @@ public class OSMReader {
                 }
             }
         } catch (XMLStreamException e) {
-            AlertController.showError("An unexpected error occurred while loading OSM file",
+            throw new ApplicationException("An unexpected error occurred while loading OSM file",
                     "Please verify the file integrity, or attempt loading another file", e);
         }
 

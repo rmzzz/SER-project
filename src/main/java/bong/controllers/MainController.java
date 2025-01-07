@@ -7,6 +7,7 @@ import bong.OSMReader.Node;
 import bong.OSMReader.OSMReader;
 import bong.addressparser.Address;
 import bong.canvas.*;
+import bong.exceptions.ApplicationException;
 import bong.exceptions.FileTypeNotSupportedException;
 import bong.routeFinding.Instruction;
 import javafx.event.ActionEvent;
@@ -746,7 +747,7 @@ public class MainController {
         }
     }
 
-    public boolean loadFileOnClick(){
+    public boolean loadFileOnClick() {
         try {
             List<String> acceptedFileTypes = new ArrayList<>();
             acceptedFileTypes.add("*.bin");
@@ -762,16 +763,16 @@ public class MainController {
                 loadFile(file);
                 return true;
             } 
-            return false;
         } catch (FileTypeNotSupportedException ex) {
             AlertController.showError("File type not supported",
                     "File type not supported: " + ex.getFileType(), ex);
-            return false;
+        } catch (ApplicationException ex) {
+            AlertController.showError(ex);
         } catch (Exception ex) {
             AlertController.showError("Unexpected error",
                     "Something unexpected happened, please try again", ex);
-            return false;
         }
+        return false;
     }
 
     public void loadFile(File file) throws Exception {
