@@ -1,17 +1,15 @@
 package bong.canvas;
 
 import java.io.Serializable;
-import java.util.Arrays;
+import java.util.stream.DoubleStream;
+
 import bong.util.Geometry;
 import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 
 public class Range implements Serializable {
-
-  /**
-   *
-   */
   private static final long serialVersionUID = 1L;
+
   private float minX, minY, maxX, maxY;
 
   public Range(float minX, float minY, float maxX, float maxY) {
@@ -46,18 +44,21 @@ public class Range implements Serializable {
     return !(that.minX >= this.maxX || this.minX >= that.maxX || that.minY >= this.maxY || this.minY >= that.maxY);
   }
 
-  public double distanceToPoint(Point2D point){
-    if(Geometry.pointInsideRange(point, this)){
+  public double distanceToPoint(Point2D point) {
+    if (containsPoint(point)) {
       return 0.0;
     }
-    double[] rangeDists = new double[]{
+    return DoubleStream.of(
       Geometry.distanceToLineSegment(point, new Point2D(this.minX, this.minY), new Point2D(this.maxX, this.minY)),
       Geometry.distanceToLineSegment(point, new Point2D(this.maxX, this.minY), new Point2D(this.maxX, this.maxY)),
       Geometry.distanceToLineSegment(point, new Point2D(this.maxX, this.maxY), new Point2D(this.minX, this.maxY)),
-      Geometry.distanceToLineSegment(point, new Point2D(this.minX, this.maxY), new Point2D(this.minX, this.minY)),
-    };
-    Arrays.sort(rangeDists);
-    return rangeDists[0];
+      Geometry.distanceToLineSegment(point, new Point2D(this.minX, this.maxY), new Point2D(this.minX, this.minY))
+    ).min().orElse(Double.POSITIVE_INFINITY);
+  }
+
+  public boolean containsPoint(Point2D point) {
+    return minX <= point.getX() && point.getX() <= maxX
+           && minY <= point.getY() && point.getY() <= maxY;
   }
 
   public Point2D getCentroid(){

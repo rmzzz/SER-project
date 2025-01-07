@@ -3,6 +3,7 @@ package bong.canvas;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import javafx.geometry.Point2D;
 import org.junit.jupiter.api.Test;
 
 public class RangeTest {
@@ -85,6 +86,40 @@ public class RangeTest {
       assertFalse(new Range(1f,1f,2f,2f).overlapsWith(new Range(3,0,3.1f,1.5f)));
       assertFalse(new Range(1f,1f,2f,2f).overlapsWith(new Range(3,1.5f,3.1f,3)));
     }
+
+  @Test
+  public void testContainsPoint() {
+    assertTrue(new Range(0, 0, 1, 1).containsPoint(new Point2D(0.5, 0.5)));
+    assertTrue(new Range(0, 0, 1, 1).containsPoint(new Point2D(0.1, 0.1)));
+    assertTrue(new Range(0, 0, 1, 1).containsPoint(new Point2D(0.0, 0.0)));
+    assertTrue(new Range(0, 0, 1, 1).containsPoint(new Point2D(0.0, 1.0)));
+    assertTrue(new Range(0, 0, 1, 1).containsPoint(new Point2D(1.0, 0.0)));
+    assertTrue(new Range(0, 0, 1, 1).containsPoint(new Point2D(1.0, 1.0)));
+    assertTrue(new Range(0, 0, 1, 1).containsPoint(new Point2D(0.0, 0.5)));
+    assertTrue(new Range(0, 0, 1, 1).containsPoint(new Point2D(0.5, 0.0)));
+    assertTrue(new Range(0, 0, 1, 1).containsPoint(new Point2D(1.0, 0.5)));
+    assertTrue(new Range(0, 0, 1, 1).containsPoint(new Point2D(0.5, 1.0)));
+    assertTrue(new Range(1, 1, 0, 0).containsPoint(new Point2D(0.5, 0.5)));
+    assertTrue(new Range(0, 0, 0, 0).containsPoint(new Point2D(0.0, 0.0)));
+    assertTrue(new Range(Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY).containsPoint(new Point2D(0.0, 0.0)));
+    assertTrue(new Range(Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY).containsPoint(new Point2D(Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY)));
+    assertTrue(new Range(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY).containsPoint(new Point2D(0.0, 0.0)));
+    assertTrue(new Range(0, 0, 1, 0).containsPoint(new Point2D(0.0, 0.0)));
+    assertTrue(new Range(0, 1, 1, 0).containsPoint(new Point2D(0.5, 0.5)));
+
+    assertFalse(new Range(0, 0, 1, 1).containsPoint(new Point2D(-.1, 0.5)));
+    assertFalse(new Range(0, 0, 1, 1).containsPoint(new Point2D(0.5, -.1)));
+    assertFalse(new Range(0, 0, 1, 1).containsPoint(new Point2D(1.1, 0.5)));
+    assertFalse(new Range(0, 0, 1, 1).containsPoint(new Point2D(0.5, 1.1)));
+    assertFalse(new Range(0, 0, 1, 1).containsPoint(new Point2D(1.1, 1.1)));
+    assertFalse(new Range(0, 0, 1, 1).containsPoint(new Point2D(1.1, -.1)));
+    assertFalse(new Range(0, 0, 1, 1).containsPoint(new Point2D(-.1, 1.1)));
+    assertFalse(new Range(0, 0, 1, 1).containsPoint(new Point2D(-.1, -.1)));
+    assertFalse(new Range(0, 0, 1, 1).containsPoint(new Point2D(1.1, 0.5)));
+    assertFalse(new Range(0, 0, 1, 1).containsPoint(new Point2D(0.5, 1.1)));
+    assertFalse(new Range(0, 0, 1, 1).containsPoint(new Point2D(-.1, 0.5)));
+    assertFalse(new Range(0, 0, 1, 1).containsPoint(new Point2D(0.5, -.1)));
+  }
 
     public Range rangeFromCenterPoint(float x, float y){
       float diff = 0.1f;
