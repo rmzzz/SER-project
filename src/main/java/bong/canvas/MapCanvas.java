@@ -1,7 +1,6 @@
 package bong.canvas;
 
 import bong.OSMReader.*;
-import bong.controllers.MainController;
 import bong.controllers.RouteController;
 import bong.routeFinding.*;
 import javafx.geometry.Point2D;
@@ -433,18 +432,18 @@ public class MapCanvas extends Canvas {
         this.destinationNode = dest;
     }
 
-	public void showStreetNearMouse(MainController mainController, MouseEvent e) {
+	public void showStreetNearMouse(Model model, MouseEvent e) {
 	    try {
 	        Point2D translatedCoords = getTrans().inverseTransform(e.getX(), e.getY());
-	        Node nearestNode = (Node) mainController.model.getRoadKDTree().nearestNeighborForEdges(translatedCoords, "Walk");
+	        Node nearestNode = (Node) model.getRoadKDTree().nearestNeighborForEdges(translatedCoords, "Walk");
 	        long nodeAsLong = nearestNode.getAsLong();
-	        Edge streetEdge = mainController.model.getGraph().getAdj().get(nodeAsLong).get(0);
+	        Edge streetEdge = model.getGraph().getAdj().get(nodeAsLong).get(0);
 	        double bestAngle = Double.POSITIVE_INFINITY;
 	
 	
 	        Point2D mouseRelativeToNodeVector = new Point2D(translatedCoords.getX() - nearestNode.getLon(), translatedCoords.getY() - nearestNode.getLat());
 	
-	        for (Edge edge : mainController.model.getGraph().getAdj().get(nearestNode.getAsLong())) {
+	        for (Edge edge : model.getGraph().getAdj().get(nearestNode.getAsLong())) {
 	            Node otherNode = edge.otherNode(nodeAsLong);
 	            Point2D otherNodeRelativeToNodeVector = new Point2D(otherNode.getLon() - nearestNode.getLon(), otherNode.getLat() - nearestNode.getLat());
 	

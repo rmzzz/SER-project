@@ -1,6 +1,5 @@
 package bong.controllers;
 
-import bong.App;
 import bong.OSMReader.MercatorProjector;
 import bong.OSMReader.Model;
 import bong.OSMReader.Node;
@@ -10,6 +9,7 @@ import bong.canvas.*;
 import bong.exceptions.ApplicationException;
 import bong.exceptions.FileTypeNotSupportedException;
 import bong.routeFinding.Instruction;
+import bong.util.ResourceLoader;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainController {
     private Stage stage;
+    private ResourceLoader resourceLoader;
     public Model model;
     private Point2D lastMouse;
     private ArrayList<Address> tempBest = new ArrayList<>();
@@ -65,8 +66,9 @@ public class MainController {
     private boolean shouldPan = true;
     private boolean showStreetOnHover = false;
 
-    public MainController(Stage primaryStage) {
+    public MainController(Stage primaryStage, ResourceLoader resourceLoader) {
         this.stage = primaryStage;
+        this.resourceLoader = resourceLoader;
         new FileController();
         this.poiController = new PointsOfInterestController();
         this.searchController = new SearchController();
@@ -286,7 +288,7 @@ public class MainController {
 
         canvas.setOnMouseMoved(e -> {
             if (showStreetOnHover) {
-                canvas.showStreetNearMouse(this, e);
+                canvas.showStreetNearMouse(model, e);
             }
         });
 
@@ -459,12 +461,12 @@ public class MainController {
     private void openHelp() {
         try {
             Stage helpStage = new Stage();
-            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("views/help.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(resourceLoader.getViewResource("Help.fxml"));
             Parent root = fxmlLoader.load();
             helpStage.setTitle("Help");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getClassLoader().getResource("bong/views/style.css").toExternalForm());
-            helpStage.getIcons().add(new Image(this.getClass().getClassLoader().getResourceAsStream("bong/views/bongIcon.png")));
+            scene.getStylesheets().add(resourceLoader.getViewResource("style.css").toExternalForm());
+            helpStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream("bongIcon.png")));
             helpStage.setScene(scene);
             helpStage.show();
         } catch (Exception ex) {
@@ -475,12 +477,12 @@ public class MainController {
     private void openAbout() {
         try {
             Stage aboutStage = new Stage();
-            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("views/about.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(resourceLoader.getViewResource("about.fxml"));
             Parent root = fxmlLoader.load();
             aboutStage.setTitle("About");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getClassLoader().getResource("bong/views/style.css").toExternalForm());
-            aboutStage.getIcons().add(new Image(this.getClass().getClassLoader().getResourceAsStream("bong/views/bongIcon.png")));
+            scene.getStylesheets().add(resourceLoader.getViewResource("style.css").toExternalForm());
+            aboutStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream("bongIcon.png")));
             aboutStage.setScene(scene);
             aboutStage.show();
         } catch (Exception ex) {
@@ -491,14 +493,14 @@ public class MainController {
     private void openDevTools() {
         try {
             Stage devStage = new Stage();
-            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("views/devview.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(resourceLoader.getViewResource("devview.fxml"));
             DevController devController = new DevController(devStage, canvas);
             fxmlLoader.setController(devController);
             Parent root = fxmlLoader.load();
             devStage.setTitle("dev tools");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getClassLoader().getResource("bong/views/style.css").toExternalForm());
-            devStage.getIcons().add(new Image(this.getClass().getClassLoader().getResourceAsStream("bong/views/bongIcon.png")));
+            scene.getStylesheets().add(resourceLoader.getViewResource("style.css").toExternalForm());
+            devStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream("bongIcon.png")));
             devStage.setScene(scene);
             devStage.show();
         } catch (Exception ex) {
