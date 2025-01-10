@@ -182,11 +182,11 @@ public class RouteController {
         routeDistance = 0;
         routeTime = 0;
 
-        Edge first = list.get(0);
+        Edge first = list.getFirst();
         String prevEdgeName = first.getStreet().getName();
         double tempLength = 0;
         Edge prevEdge = first;
-        lastInstructionNode = list.get(0).getTailNode();
+        lastInstructionNode = list.getFirst().getTailNode();
         for (int i = 0; i < list.size(); i++) {
             Edge currEdge = list.get(i);
             double meterMultiplier = - (MercatorProjector.unproject(currEdge.getTailNode().getLon(), currEdge.getTailNode().getLat()).getLat()) / 100;
@@ -227,7 +227,7 @@ public class RouteController {
             routeDistance += distance;
             addTimeToTotal(vehicle, currEdge, distance);
         }
-        instructions.add(new Instruction("You have arrived at your destination", list.get(list.size() - 1).getHeadNode()));
+        instructions.add(new Instruction("You have arrived at your destination", list.getLast().getHeadNode()));
     }
 
     public ArrayList<Edge> singleDirectRoute(ArrayList<Edge> route) {
@@ -254,7 +254,7 @@ public class RouteController {
     public void setRoute(boolean useBidirectional) {
         route = dijkstra.pathTo(dijkstra.getLastNode(), 1);
 
-        lastInstructionNode = route.get(0).getTailNode();
+        lastInstructionNode = route.getFirst().getTailNode();
         if (useBidirectional) {
             ArrayList<Edge> secondPart = dijkstra.pathTo(dijkstra.getLastNode(), 2);
             Collections.reverse(secondPart);
@@ -264,7 +264,7 @@ public class RouteController {
 
         float[] floats = new float[route.size() * 2 + 2];
 
-        Edge firstEdge = route.get(0);
+        Edge firstEdge = route.getFirst();
 
         floats[0] = firstEdge.getTailNode().getLon();
         floats[1] = firstEdge.getTailNode().getLat();
@@ -281,9 +281,9 @@ public class RouteController {
     }
 
     public void setDijkstra(long startPoint, long endPoint, String vehicle, boolean shortestRoute, boolean useBidirectional, boolean useAStar) throws Exception{
-        dijkstra = new Dijkstra(canvas.getModel().getGraph(), startPoint, endPoint, vehicle, shortestRoute, useBidirectional, useAStar);
+        dijkstra = new Dijkstra(canvas.getMapState().getModel().getGraph(), startPoint, endPoint, vehicle, shortestRoute, useBidirectional, useAStar);
         setRoute(useBidirectional);
-        generateRouteInfo(route, vehicle, canvas.getModel().getGraph());
+        generateRouteInfo(route, vehicle, canvas.getMapState().getModel().getGraph());
         canvas.repaint();
     }
 

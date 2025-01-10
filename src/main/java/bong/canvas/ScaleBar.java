@@ -16,7 +16,7 @@ public class ScaleBar implements Drawable {
     public ScaleBar(){}
 
     public void updateScaleBar(MapCanvas canvas) {
-        Point2D placement = canvas.getModelCoordinates(canvas.getWidth() - 50, canvas.getHeight() - 50);
+        Point2D placement = canvas.getMapRenderer().getModelCoordinates(canvas.getWidth() - 50, canvas.getHeight() - 50);
         placementX = placement.getX();
         placementY = placement.getY();
         Node placementModel = MercatorProjector.unproject(placementX, placementY);
