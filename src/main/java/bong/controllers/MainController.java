@@ -304,7 +304,7 @@ public class MainController {
         searchField.textProperty().addListener((obs,oldVal,newVal) -> {
             hidePinInfo();
             if (searchField.isFocused()) setCurrentQuery(searchField.getText().trim());
-            if (searchField.getText().length() == 0) suggestionsContainer.getChildren().clear();
+            if (searchField.getText().isEmpty()) suggestionsContainer.getChildren().clear();
             canvas.nullPin();
         });
 
@@ -313,15 +313,15 @@ public class MainController {
                 event.consume();
             }
             if (event.getCode() == KeyCode.DOWN) {
-                if(suggestionsContainer.getChildren().size() > 0) {
-                    suggestionsContainer.getChildren().get(0).requestFocus();
+                if(!suggestionsContainer.getChildren().isEmpty()) {
+                    suggestionsContainer.getChildren().getFirst().requestFocus();
                 }
                 event.consume();
             }
         });
 
         searchField.setOnAction(e -> {
-            if(suggestionsContainer.getChildren().size() > 0) {
+            if(!suggestionsContainer.getChildren().isEmpty()) {
                 SuggestionButton b = (SuggestionButton) suggestionsContainer.getChildren().get(0);
                 Address a = b.getAddress();
                 goToAddress(a);
@@ -613,7 +613,7 @@ public class MainController {
 
         POIButton.setOnAction(e -> {
             if (!POIExists.get()) {
-                poiController.showAddPointDialog(currentPoint);
+                showAddPointDialog(currentPoint);
                 myPoints.getItems().clear();
                 poiController.loadPointsOfInterest();
                 for (PointOfInterest poi : PointsOfInterestController.getPointsOfInterest()) {
@@ -633,6 +633,16 @@ public class MainController {
                 setPOIButton();
             }
         });
+    }
+
+    public void showAddPointDialog(Point2D point) {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Point of interest");
+        dialog.setContentText("Save point of interest");
+        dialog.setHeaderText("Enter the name of the point");
+        dialog.setContentText("Name:");
+        Optional<String> givenName = dialog.showAndWait();
+        poiController.addPointOfInterest(point, givenName);
     }
 
     public void showPinMenu() {
@@ -675,11 +685,7 @@ public class MainController {
 
         setStartOrDestinationLabel(destinationAddress, destinationPoint, destinationLabel);
 
-        if (startAddress == null || destinationAddress == null) {
-            findRoute.setDisable(true);
-        } else {
-            findRoute.setDisable(false);
-        }
+        findRoute.setDisable(startAddress == null || destinationAddress == null);
 
         ArrayList<Instruction> instructions;
         if ((instructions = canvas.getRouteController().getInstructions()) != null) {
