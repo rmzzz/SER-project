@@ -1,34 +1,39 @@
 package bong.controllers;
 
 import bong.OSMReader.MercatorProjector;
+import bong.OSMReader.Model;
 import bong.OSMReader.Node;
 import bong.canvas.LinePath;
 import bong.canvas.MapCanvas;
+import bong.model.RouteModel;
 import bong.routeFinding.*;
 import javafx.geometry.Point2D;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class RouteController {
-
+    private Model model;
+    private RouteModel routeModel;
     private MapCanvas canvas;
 
-    public RouteController(MapCanvas canvas) {
+    public RouteController(Model model, MapCanvas canvas) {
+        this.model = model;
         this.canvas = canvas;
-
+        routeModel = new RouteModel();
     }
 
     private ArrayList<Edge> route = new ArrayList<>();
     private Dijkstra dijkstra;
-    private LinePath drawableRoute;
+
     private double routeTime;
     private double routeDistance;
     private int roundaboutCounter = 0;
     private Node lastInstructionNode;
     private String lastActionInstruction;
-    private ArrayList<Instruction> instructions = new ArrayList<>();
+
 
     public Iterable<Edge> getRoute() {
         return route;
@@ -43,7 +48,7 @@ public class RouteController {
     }
 
     public LinePath getDrawableRoute() {
-        return drawableRoute;
+        return routeModel.getDrawableRoute();
     }
 
     public void setRouteTime(double newTime) {
@@ -54,8 +59,8 @@ public class RouteController {
         routeDistance = newDistance;
     }
 
-    public ArrayList<Instruction> getInstructions() {
-        return instructions;
+    public List<Instruction> getInstructions() {
+        return routeModel.getInstructions();
     }
 
     public String getLastActionInstruction() {
@@ -64,9 +69,10 @@ public class RouteController {
 
     public void clearRoute() {
         route = null;
-        instructions = null;
         dijkstra = null;
-        drawableRoute = null;
+        lastInstructionNode = null;
+        lastActionInstruction = null;
+        routeModel.clear();
         canvas.repaint();
     }
 
@@ -123,7 +129,7 @@ public class RouteController {
         } else {
             instruction += prevEdgeName + " for " + roundedLength + " m";
         }
-        instructions.add(new Instruction(instruction, lastInstructionNode));
+        routeModel.addInstruction(new Instruction(instruction, lastInstructionNode));
         lastActionInstruction = null;
         lastInstructionNode = currEdge.getTailNode();
     }
@@ -178,7 +184,9 @@ public class RouteController {
 
     public void generateRouteInfo(ArrayList<Edge> list, String vehicle, Graph graph) {
 
-        instructions = new ArrayList<>();
+        //instructions = new ArrayList<>();
+        routeModel.getInstructions().clear(); // TODO Ramiz: check why instructions are reset here
+
         routeDistance = 0;
         routeTime = 0;
 
@@ -227,7 +235,7 @@ public class RouteController {
             routeDistance += distance;
             addTimeToTotal(vehicle, currEdge, distance);
         }
-        instructions.add(new Instruction("You have arrived at your destination", list.get(list.size() - 1).getHeadNode()));
+        routeModel.addInstruction(new Instruction("You have arrived at your destination", list.get(list.size() - 1).getHeadNode()));
     }
 
     public ArrayList<Edge> singleDirectRoute(ArrayList<Edge> route) {
@@ -275,15 +283,16 @@ public class RouteController {
             floats[i + 1] = currentNode.getLat();
         }
 
-        drawableRoute = new LinePath(floats);
-
+        routeModel.setDrawableRoute(new LinePath(floats));
+        canvas.setRouteModel(routeModel);
         canvas.repaint();
     }
 
     public void setDijkstra(long startPoint, long endPoint, String vehicle, boolean shortestRoute, boolean useBidirectional, boolean useAStar) throws Exception{
-        dijkstra = new Dijkstra(canvas.getModel().getGraph(), startPoint, endPoint, vehicle, shortestRoute, useBidirectional, useAStar);
+        dijkstra = new Dijkstra(model.getGraph(), startPoint, endPoint, vehicle, shortestRoute, useBidirectional, useAStar);
         setRoute(useBidirectional);
-        generateRouteInfo(route, vehicle, canvas.getModel().getGraph());
+        generateRouteInfo(route, vehicle, model.getGraph());
+        canvas.setRouteModel(routeModel);
         canvas.repaint();
     }
 

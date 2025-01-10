@@ -1,7 +1,7 @@
 package bong.canvas;
 
 import bong.OSMReader.*;
-import bong.controllers.RouteController;
+import bong.model.RouteModel;
 import bong.routeFinding.*;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
@@ -18,6 +18,7 @@ public class MapCanvas extends Canvas {
     private Drawer gc;
     private Affine trans;
     private Model model;
+    private RouteModel routeModel;
 
     private ScaleBar scaleBar;
     private boolean smartTrace = true;
@@ -31,7 +32,6 @@ public class MapCanvas extends Canvas {
     private Pin currentPin;
     private RouteOriginIndicator currentRouteOrigin;
     private RouteDestinationIndicator currentRouteDestination;
-    private RouteController routeController = new RouteController(this);
 
     private boolean showCities = true;
     private boolean useDependentDraw = true;
@@ -44,10 +44,6 @@ public class MapCanvas extends Canvas {
 
     private Range renderRange;
     private double pixelWidth;
-
-    public RouteController getRouteController() {
-        return routeController;
-    }
 
     public Affine getTrans() {
         return trans;
@@ -137,16 +133,16 @@ public class MapCanvas extends Canvas {
                 }
             }
 
-            if (routeController.getRoute() != null) {
+            if (routeModel.hasRoute()) {
                 gc.setStroke(Color.valueOf("#69c7ff"));
                 gc.setLineWidth(pixelwidth*3);
-                LinePath drawableRoute;
-                if ((drawableRoute = routeController.getDrawableRoute()) != null) {
+                LinePath drawableRoute = routeModel.getDrawableRoute();
+                if (drawableRoute != null) {
                     drawableRoute.draw(gc, pixelwidth, smartTrace);
                 }
-                if(routeController.getInstructions() != null){
-                    for(Instruction instruction : routeController.getInstructions()){
-                        instruction.getIndicator().draw(gc,pixelwidth);
+                if (routeModel.getInstructions() != null){
+                    for(Instruction instruction : routeModel.getInstructions()) {
+                        instruction.getIndicator().draw(gc, pixelwidth);
                     }
                 }
             }
@@ -231,11 +227,11 @@ public class MapCanvas extends Canvas {
         renderFullScreen = bool;
     }
 
-    public void showDijkstraTree() {
-        Dijkstra dijkstra;
-        if ((dijkstra = routeController.getDijkstra()) != null) {
+    public void showDijkstraTree(Dijkstra dijkstra) {
+        if (dijkstra != null) {
             for (Map.Entry<Long, Edge> entry : dijkstra.getAllEdgeTo().entrySet()) {
-                new LinePath(entry.getValue().getTailNode(), entry.getValue().getHeadNode()).draw(gc, 1, false);
+                new LinePath(entry.getValue().getTailNode(), entry.getValue().getHeadNode())
+                        .draw(gc, 1, false);
             }
         }
     }
@@ -366,6 +362,13 @@ public class MapCanvas extends Canvas {
         this.model = model;
     }
 
+    public RouteModel getRouteModel() {
+        return routeModel;
+    }
+
+    public void setRouteModel(RouteModel routeModel) {
+        this.routeModel = routeModel;
+    }
 
     public Point2D getModelCoordinates(double x, double y) {
         try {

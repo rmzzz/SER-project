@@ -52,6 +52,7 @@ public class MainController {
     private Point2D currentPoint;
     private PointsOfInterestController poiController;
     private SearchController searchController;
+    private RouteController routeController;
 
     private ToggleGroup vehicleGroup = new ToggleGroup();
     @FXML private RadioButton carButton;
@@ -151,6 +152,7 @@ public class MainController {
         });
 
         canvas = mapCanvasWrapper.mapCanvas;
+        routeController = new RouteController(model, canvas);
 
         canvas.setOnMousePressed(e -> {
             lastMouse = new Point2D(e.getX(), e.getY());
@@ -251,7 +253,7 @@ public class MainController {
 
         setAsDestination.setTooltip(setupTooltip("Set as destination"));
         setAsDestination.setOnAction(e -> {
-            canvas.getRouteController().clearRoute();
+            routeController.clearRoute();
             destinationAddress = currentAddress;
             destinationPoint = currentPoint;
             canvas.setRouteDestination(destinationPoint);
@@ -260,7 +262,7 @@ public class MainController {
 
         setAsStart.setTooltip(setupTooltip("Set as start"));
         setAsStart.setOnAction(e -> {
-            canvas.getRouteController().clearRoute();
+            routeController.clearRoute();
             startAddress = currentAddress;
             startPoint = currentPoint;
             canvas.setRouteOrigin(startPoint);
@@ -281,7 +283,7 @@ public class MainController {
                 routeInfo.setManaged(false);
                 noRouteFound.setVisible(true);
                 noRouteFound.setManaged(true);
-                canvas.getRouteController().clearRoute();
+                routeController.clearRoute();
                 ex.printStackTrace();
             }
         });
@@ -431,7 +433,7 @@ public class MainController {
         fastButton.setSelected(true);
 
         cancelRoute.setOnAction(e -> {
-            canvas.getRouteController().clearRoute();
+            routeController.clearRoute();
             startAddress = null;
             destinationAddress = null;
             destinationPoint = null;
@@ -454,8 +456,7 @@ public class MainController {
         long startRoadId = startNode.getAsLong();
         long destinationRoadId = destinationNode.getAsLong();
 
-        canvas.getRouteController().setDijkstra(startRoadId, destinationRoadId, vehicle, shortestRoute, true, true);
-
+        routeController.setDijkstra(startRoadId, destinationRoadId, vehicle, shortestRoute, true, true);
     }
 
     private void openHelp() {
@@ -494,7 +495,7 @@ public class MainController {
         try {
             Stage devStage = new Stage();
             FXMLLoader fxmlLoader = new FXMLLoader(resourceLoader.getViewResource("devview.fxml"));
-            DevController devController = new DevController(devStage, canvas);
+            DevController devController = new DevController(devStage, canvas, routeController);
             fxmlLoader.setController(devController);
             Parent root = fxmlLoader.load();
             devStage.setTitle("dev tools");
@@ -684,8 +685,8 @@ public class MainController {
             findRoute.setDisable(false);
         }
 
-        ArrayList<Instruction> instructions;
-        if ((instructions = canvas.getRouteController().getInstructions()) != null) {
+        List<Instruction> instructions = routeController.getInstructions();
+        if (!instructions.isEmpty()) {
             directions.getChildren().clear();
             for (Instruction instruction : instructions) {
                 Button button = new Button(instruction.getInstruction());
@@ -695,11 +696,11 @@ public class MainController {
                 });
                 directions.getChildren().add(button);
             }
-            routeDistance.setText(canvas.getRouteController().distanceString());
-            routeTime.setText(canvas.getRouteController().timeString());
+            routeDistance.setText(routeController.distanceString());
+            routeTime.setText(routeController.timeString());
         }
 
-        if (canvas.getRouteController().getRoute() != null) {
+        if (routeController.getRoute() != null) {
             routeInfo.setVisible(true);
             routeInfo.setManaged(true);
         } else {

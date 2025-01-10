@@ -17,11 +17,13 @@ import java.util.List;
 public class DevController {
     Stage stage;
     MapCanvas canvas;
+    RouteController routeController;
     List<Type> typesToBeDrawn = Arrays.asList(Type.getTypes());
 
-    public DevController(Stage devStage, MapCanvas canvas) {
+    public DevController(Stage devStage, MapCanvas canvas, RouteController routeController) {
         this.stage = devStage;
         this.canvas = canvas;
+        this.routeController = routeController;
     }
 
     @FXML private Button zoomIn;
@@ -112,25 +114,25 @@ public class DevController {
         vehicle.getSelectionModel().selectLast();
 
         showDijkstra.setOnAction(e -> {
-            canvas.showDijkstraTree();
+            canvas.showDijkstraTree(routeController.getDijkstra());
         });
 
         findRoute.setOnAction(e -> {
             try {
-                canvas.getRouteController().setDijkstra(Long.parseLong(startPoint.getText()), Long.parseLong(endPoint.getText()), vehicle.getValue(), shortestRoute.isSelected(), useBidirectional.isSelected(), useAStar.isSelected());
+                routeController.setDijkstra(Long.parseLong(startPoint.getText()), Long.parseLong(endPoint.getText()), vehicle.getValue(), shortestRoute.isSelected(), useBidirectional.isSelected(), useAStar.isSelected());
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         });
 
         clearRoute.setOnAction(e -> {
-            canvas.getRouteController().clearRoute();
+            routeController.clearRoute();
         });
 
         shortestRoute.setSelected(true);
 
         routeDescription.setOnAction(e -> {
-            for (Instruction instruction : canvas.getRouteController().getInstructions()) {
+            for (Instruction instruction : routeController.getInstructions()) {
                 System.out.println(instruction.getInstruction());
             }
         });
