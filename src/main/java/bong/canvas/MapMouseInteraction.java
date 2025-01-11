@@ -19,7 +19,7 @@ public class MapMouseInteraction {
         showStreetNodeCloseToMouse = newValue;
     }
 
-    public void showStreetNearMouse(Model model, MouseEvent e, MapCanvas canvas) {
+    public void showStreetNearMouse(Model model, MouseEvent e, MapCanvasInterface canvas) {
         try {
             Point2D translatedCoords = getTranslatedCoords(e, canvas);
             Node nearestNode = findNearestNode(model, translatedCoords);
@@ -32,7 +32,7 @@ public class MapMouseInteraction {
         }
     }
 
-    public Point2D getTranslatedCoords(MouseEvent e, MapCanvas canvas) throws NonInvertibleTransformException {
+    public Point2D getTranslatedCoords(MouseEvent e, MapCanvasInterface canvas) throws NonInvertibleTransformException {
         return canvas.getMapRenderer().getTrans().inverseTransform(e.getX(), e.getY());
     }
 
@@ -78,7 +78,7 @@ public class MapMouseInteraction {
         return (streetName != null) ? streetName : "Unnamed street";
     }
 
-    public void renderStreetDetails(MapCanvas canvas, Node nearestNode, Edge streetEdge, String streetName) {
+    public void renderStreetDetails(MapCanvasInterface canvas, Node nearestNode, Edge streetEdge, String streetName) {
         canvas.getMapRenderer().repaint(canvas);
         canvas.getMapRenderer().drawEdge(streetEdge);
 

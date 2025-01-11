@@ -50,7 +50,7 @@ public class MapRenderer {
         gc.setStroke(prevStroke);
     }
 
-    public void repaint(MapCanvas mapCanvas) {
+    public void repaint(MapCanvasInterface mapCanvas) {
         MapState mapState = mapCanvas.getMapState();
         gc.setTransform(new Affine());
         setWaterBackground(mapCanvas);
@@ -63,11 +63,11 @@ public class MapRenderer {
         updateSearchRange(mapCanvas);
 
         if (mapState.getModel() != null) {
-            drawTypes(mapState, mapCanvas);
+            drawTypes(mapState);
             drawRouteModel(mapState);
             drawModelBoundIfRequired(mapState);
             drawPinAndRoute(mapCanvas);
-            drawCitiesIfRequired(mapState, mapCanvas);
+            drawCitiesIfRequired(mapState);
         }
 
         scaleBar.updateScaleBar(mapCanvas);
@@ -83,7 +83,7 @@ public class MapRenderer {
         }
     }
 
-    private void setWaterBackground(MapCanvas mapCanvas) {
+    private void setWaterBackground(MapCanvasInterface mapCanvas) {
         if (useRegularColors) {
             gc.setFill(Type.WATER.getColor());
         } else {
@@ -92,7 +92,7 @@ public class MapRenderer {
         gc.fillRect(0, 0, mapCanvas.getWidth(), mapCanvas.getHeight());
     }
 
-    private void drawTypes(MapState mapState, MapCanvas mapCanvas) {
+    private void drawTypes(MapState mapState) {
         for (Type type : mapState.getTypesToBeDrawn()) {
             if (type != Type.UNKNOWN) {
                 if (useDependentDraw) {
@@ -128,7 +128,7 @@ public class MapRenderer {
         }
     }
 
-    private void drawPinAndRoute(MapCanvas mapCanvas) {
+    private void drawPinAndRoute(MapCanvasInterface mapCanvas) {
         if (mapCanvas.getMapRouteManager().getCurrentRouteOrigin() != null) {
             mapCanvas.getMapRouteManager().getCurrentRouteOrigin().draw(gc, this.pixelwidth);
         }
@@ -140,7 +140,7 @@ public class MapRenderer {
         }
     }
 
-    private void drawCitiesIfRequired(MapState mapState, MapCanvas mapCanvas) {
+    private void drawCitiesIfRequired(MapState mapState) {
         if (showCities) {
             gc.setStroke(Color.WHITE);
             gc.setLineWidth(this.pixelwidth * 2);
@@ -170,7 +170,7 @@ public class MapRenderer {
         }
     }
 
-    private void drawRoadNodes(MapCanvas mapCanvas) {
+    private void drawRoadNodes(MapCanvasInterface mapCanvas) {
         if (mapCanvas.getMapState().getShowRoadNodes()) {
             drawNode(mapCanvas.getMapRouteManager().getStartNode());
             drawNode(mapCanvas.getMapRouteManager().getDestinationNode());
@@ -233,7 +233,7 @@ public class MapRenderer {
         }
     }
 
-    public void updateSearchRange(MapCanvas mapCanvas) {
+    public void updateSearchRange(MapCanvasInterface mapCanvas) {
         float w = (float) mapCanvas.getWidth();
         float h = (float) mapCanvas.getHeight();
         if (mapCanvas.getMapState().getRenderFullScreen()) {
@@ -261,7 +261,7 @@ public class MapRenderer {
         }
     }
 
-    public void drawStreetName(String text, MapCanvas mapCanvas) {
+    public void drawStreetName(String text, MapCanvasInterface mapCanvas) {
         gc.setFill(Color.BLACK);
         gc.setStroke(Color.BLACK);
         gc.setTextAlign(TextAlignment.LEFT);
@@ -271,7 +271,7 @@ public class MapRenderer {
         gc.fillText(text, placement.getX(), placement.getY());
     }
 
-    public void resetView(Model model, MapCanvas mapCanvas) {
+    public void resetView(Model model, MapCanvasInterface mapCanvas) {
         trans.setToIdentity();
         Bound b = model.getBound();
         pan(-(b.getMaxLon() + b.getMinLon()) / 2, -(b.getMaxLat() + b.getMinLat()) / 2, mapCanvas);
@@ -292,12 +292,12 @@ public class MapRenderer {
         zoom(factor, mapCanvas.getWidth() / 2, mapCanvas.getHeight() / 2, mapCanvas);
     }
 
-    public void pan(double dx, double dy, MapCanvas mapCanvas) {
+    public void pan(double dx, double dy, MapCanvasInterface mapCanvas) {
         trans.prependTranslation(dx, dy);
         repaint(mapCanvas);
     }
 
-    public void zoom(double factor, double x, double y, MapCanvas mapCanvas) {
+    public void zoom(double factor, double x, double y, MapCanvasInterface mapCanvas) {
         if (shouldZoom(factor)) {
             trans.prependScale(factor, factor, x, y);
             repaint(mapCanvas);
@@ -328,7 +328,7 @@ public class MapRenderer {
         this.drawBound = drawBound;
     }
 
-    public void setDraggedSquare(LinePath linePath, MapCanvas mapCanvas) {
+    public void setDraggedSquare(LinePath linePath, MapCanvasInterface mapCanvas) {
         draggedSquare = linePath;
         repaint(mapCanvas);
     }
@@ -337,17 +337,17 @@ public class MapRenderer {
         return drawBound;
     }
 
-    public void setUseDependentDraw(boolean shouldUseDependentDraw, MapCanvas mapCanvas) {
+    public void setUseDependentDraw(boolean shouldUseDependentDraw, MapCanvasInterface mapCanvas) {
         useDependentDraw = shouldUseDependentDraw;
         repaint(mapCanvas);
     }
 
-    public void setShowCities(boolean showCities, MapCanvas mapCanvas) {
+    public void setShowCities(boolean showCities, MapCanvasInterface mapCanvas) {
         this.showCities = showCities;
         repaint(mapCanvas);
     }
 
-    public void setTraceType(boolean shouldSmartTrace, MapCanvas mapCanvas) {
+    public void setTraceType(boolean shouldSmartTrace, MapCanvasInterface mapCanvas) {
         smartTrace = shouldSmartTrace;
         repaint(mapCanvas);
     }
@@ -356,7 +356,7 @@ public class MapRenderer {
         return trans;
     }
 
-    public void setUseRegularColors(boolean shouldUseRegularColors, MapCanvas mapCanvas) {
+    public void setUseRegularColors(boolean shouldUseRegularColors, MapCanvasInterface mapCanvas) {
         useRegularColors = shouldUseRegularColors;
         repaint(mapCanvas);
     }
@@ -369,11 +369,11 @@ public class MapRenderer {
         }
     }
 
-    public void zoomToNode(Node node, MapCanvas mapCanvas) {
+    public void zoomToNode(Node node, MapCanvasInterface mapCanvas) {
         zoomToPoint(1, node.getLon(), node.getLat(), mapCanvas);
     }
 
-    public void zoomToPoint(double factor, float lon, float lat, MapCanvas mapCanvas) {
+    public void zoomToPoint(double factor, float lon, float lat, MapCanvasInterface mapCanvas) {
         trans.setToIdentity();
         pan(-lon, -lat, mapCanvas);
         zoom(factor, 0, 0, mapCanvas);

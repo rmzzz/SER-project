@@ -6,12 +6,12 @@ public class MapPinManager {
         return currentPin;
     }
 
-    public void setPin (float lon, float lat, MapCanvas canvas){
+    public void setPin (float lon, float lat, MapCanvasInterface canvas){
         currentPin = new Pin(lon, lat, 1);
         canvas.getMapRenderer().repaint(canvas);
     }
 
-    public void nullPin (MapCanvas canvas) {
+    public void nullPin (MapCanvasInterface canvas) {
         currentPin = null;
         canvas.getMapRenderer().repaint(canvas);
     }

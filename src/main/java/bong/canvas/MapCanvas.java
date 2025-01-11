@@ -1,15 +1,10 @@
 package bong.canvas;
 
-import bong.OSMReader.*;
-import bong.model.RouteModel;
-import bong.routeFinding.*;
-import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.transform.Affine;
 import java.util.*;
 
-public class MapCanvas extends Canvas {
+public class MapCanvas extends Canvas implements MapCanvasInterface {
     private MapRenderer mapRenderer;
     private MapState mapState;
     private MapRouteManager mapRouteManager;
@@ -26,20 +21,29 @@ public class MapCanvas extends Canvas {
         this.mapMouseInteraction = new MapMouseInteraction();
     }
 
-    public MapRenderer getMapRenderer() {
-        return mapRenderer;
-    }
-
+    @Override
     public MapState getMapState() {
         return mapState;
     }
 
+    @Override
     public MapRouteManager getMapRouteManager() {
         return mapRouteManager;
     }
 
-    public MapPinManager getMapPinManager() { return mapPinManager; }
+    @Override
+    public MapPinManager getMapPinManager() {
+        return mapPinManager;
+    }
 
-    public MapMouseInteraction getMapMouseInteraction() { return mapMouseInteraction; }
+    @Override
+    public MapRenderer getMapRenderer() {
+        return mapRenderer;
+    }
+
+    @Override
+    public MapMouseInteraction getMapMouseInteraction() {
+        return mapMouseInteraction;
+    }
 
 }

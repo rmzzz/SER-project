@@ -26,13 +26,13 @@ public class MapRouteManager {
         currentRouteOrigin = new RouteOriginIndicator(1,1,1);
     }
 
-    public void clearOriginDestination(MapCanvas canvas) {
+    public void clearOriginDestination(MapCanvasInterface canvas) {
         currentRouteOrigin = null;
         currentRouteDestination = null;
         canvas.getMapRenderer().repaint(canvas);
     }
 
-    public void setRouteOrigin (Point2D point, MapCanvas canvas){
+    public void setRouteOrigin (Point2D point, MapCanvasInterface canvas){
         if (point != null) {
             currentRouteOrigin = new RouteOriginIndicator((float) point.getX(), (float) point.getY(), 1);
         } else {
@@ -41,7 +41,7 @@ public class MapRouteManager {
         canvas.getMapRenderer().repaint(canvas);
     }
 
-    public void setRouteDestination (Point2D point, MapCanvas canvas){
+    public void setRouteDestination (Point2D point, MapCanvasInterface canvas){
         if (point != null) {
             currentRouteDestination = new RouteDestinationIndicator((float) point.getX(), (float) point.getY(), 1);
         } else {

@@ -15,7 +15,7 @@ public class ScaleBar implements Drawable {
 
     public ScaleBar(){}
 
-    public void updateScaleBar(MapCanvas canvas) {
+    public void updateScaleBar(MapCanvasInterface canvas) {
         Point2D placement = canvas.getMapRenderer().getModelCoordinates(canvas.getWidth() - 50, canvas.getHeight() - 50);
         placementX = placement.getX();
         placementY = placement.getY();
