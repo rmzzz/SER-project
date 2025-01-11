@@ -1,14 +1,15 @@
 package bong.controllers;
 
-import bong.App;
 import bong.OSMReader.MercatorProjector;
 import bong.OSMReader.Model;
 import bong.OSMReader.Node;
 import bong.OSMReader.OSMReader;
 import bong.addressparser.Address;
 import bong.canvas.*;
+import bong.exceptions.ApplicationException;
 import bong.exceptions.FileTypeNotSupportedException;
 import bong.routeFinding.Instruction;
+import bong.util.ResourceLoader;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -38,7 +39,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainController {
     private Stage stage;
-    public Model model;
+    private ResourceLoader resourceLoader;
+    private Model model;
     private Point2D lastMouse;
     private ArrayList<Address> tempBest = new ArrayList<>();
     private boolean hasBeenDragged = false;
@@ -50,6 +52,7 @@ public class MainController {
     private Point2D currentPoint;
     private PointsOfInterestController poiController;
     private SearchController searchController;
+    private RouteController routeController;
 
     private ToggleGroup vehicleGroup = new ToggleGroup();
     @FXML private RadioButton carButton;
@@ -64,8 +67,9 @@ public class MainController {
     private boolean shouldPan = true;
     private boolean showStreetOnHover = false;
 
-    public MainController(Stage primaryStage) {
+    public MainController(Stage primaryStage, ResourceLoader resourceLoader) {
         this.stage = primaryStage;
+        this.resourceLoader = resourceLoader;
         new FileController();
         this.poiController = new PointsOfInterestController();
         this.searchController = new SearchController();
@@ -148,6 +152,7 @@ public class MainController {
         });
 
         canvas = mapCanvasWrapper.mapCanvas;
+        routeController = new RouteController(model, canvas);
 
         canvas.setOnMousePressed(e -> {
             lastMouse = new Point2D(e.getX(), e.getY());
@@ -248,7 +253,7 @@ public class MainController {
 
         setAsDestination.setTooltip(setupTooltip("Set as destination"));
         setAsDestination.setOnAction(e -> {
-            canvas.getRouteController().clearRoute();
+            routeController.clearRoute();
             destinationAddress = currentAddress;
             destinationPoint = currentPoint;
             canvas.setRouteDestination(destinationPoint);
@@ -257,7 +262,7 @@ public class MainController {
 
         setAsStart.setTooltip(setupTooltip("Set as start"));
         setAsStart.setOnAction(e -> {
-            canvas.getRouteController().clearRoute();
+            routeController.clearRoute();
             startAddress = currentAddress;
             startPoint = currentPoint;
             canvas.setRouteOrigin(startPoint);
@@ -278,14 +283,14 @@ public class MainController {
                 routeInfo.setManaged(false);
                 noRouteFound.setVisible(true);
                 noRouteFound.setManaged(true);
-                canvas.getRouteController().clearRoute();
+                routeController.clearRoute();
                 ex.printStackTrace();
             }
         });
 
         canvas.setOnMouseMoved(e -> {
             if (showStreetOnHover) {
-                canvas.showStreetNearMouse(this, e);
+                canvas.showStreetNearMouse(model, e);
             }
         });
 
@@ -428,7 +433,7 @@ public class MainController {
         fastButton.setSelected(true);
 
         cancelRoute.setOnAction(e -> {
-            canvas.getRouteController().clearRoute();
+            routeController.clearRoute();
             startAddress = null;
             destinationAddress = null;
             destinationPoint = null;
@@ -451,19 +456,18 @@ public class MainController {
         long startRoadId = startNode.getAsLong();
         long destinationRoadId = destinationNode.getAsLong();
 
-        canvas.getRouteController().setDijkstra(startRoadId, destinationRoadId, vehicle, shortestRoute, true, true);
-
+        routeController.setDijkstra(startRoadId, destinationRoadId, vehicle, shortestRoute, true, true);
     }
 
     private void openHelp() {
         try {
             Stage helpStage = new Stage();
-            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("views/help.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(resourceLoader.getViewResource("Help.fxml"));
             Parent root = fxmlLoader.load();
             helpStage.setTitle("Help");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getClassLoader().getResource("bong/views/style.css").toExternalForm());
-            helpStage.getIcons().add(new Image(this.getClass().getClassLoader().getResourceAsStream("bong/views/bongIcon.png")));
+            scene.getStylesheets().add(resourceLoader.getViewResource("style.css").toExternalForm());
+            helpStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream("bongIcon.png")));
             helpStage.setScene(scene);
             helpStage.show();
         } catch (Exception ex) {
@@ -474,12 +478,12 @@ public class MainController {
     private void openAbout() {
         try {
             Stage aboutStage = new Stage();
-            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("views/about.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(resourceLoader.getViewResource("about.fxml"));
             Parent root = fxmlLoader.load();
             aboutStage.setTitle("About");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getClassLoader().getResource("bong/views/style.css").toExternalForm());
-            aboutStage.getIcons().add(new Image(this.getClass().getClassLoader().getResourceAsStream("bong/views/bongIcon.png")));
+            scene.getStylesheets().add(resourceLoader.getViewResource("style.css").toExternalForm());
+            aboutStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream("bongIcon.png")));
             aboutStage.setScene(scene);
             aboutStage.show();
         } catch (Exception ex) {
@@ -490,14 +494,14 @@ public class MainController {
     private void openDevTools() {
         try {
             Stage devStage = new Stage();
-            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("views/devview.fxml"));
-            DevController devController = new DevController(devStage, canvas);
+            FXMLLoader fxmlLoader = new FXMLLoader(resourceLoader.getViewResource("devview.fxml"));
+            DevController devController = new DevController(devStage, canvas, routeController);
             fxmlLoader.setController(devController);
             Parent root = fxmlLoader.load();
             devStage.setTitle("dev tools");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getClassLoader().getResource("bong/views/style.css").toExternalForm());
-            devStage.getIcons().add(new Image(this.getClass().getClassLoader().getResourceAsStream("bong/views/bongIcon.png")));
+            scene.getStylesheets().add(resourceLoader.getViewResource("style.css").toExternalForm());
+            devStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream("bongIcon.png")));
             devStage.setScene(scene);
             devStage.show();
         } catch (Exception ex) {
@@ -685,8 +689,8 @@ public class MainController {
 
         findRoute.setDisable(startAddress == null || destinationAddress == null);
 
-        ArrayList<Instruction> instructions;
-        if ((instructions = canvas.getRouteController().getInstructions()) != null) {
+        List<Instruction> instructions = routeController.getInstructions();
+        if (!instructions.isEmpty()) {
             directions.getChildren().clear();
             for (Instruction instruction : instructions) {
                 Button button = new Button(instruction.getInstruction());
@@ -696,11 +700,11 @@ public class MainController {
                 });
                 directions.getChildren().add(button);
             }
-            routeDistance.setText(canvas.getRouteController().distanceString());
-            routeTime.setText(canvas.getRouteController().timeString());
+            routeDistance.setText(routeController.distanceString());
+            routeTime.setText(routeController.timeString());
         }
 
-        if (canvas.getRouteController().getRoute() != null) {
+        if (routeController.getRoute() != null) {
             routeInfo.setVisible(true);
             routeInfo.setManaged(true);
         } else {
@@ -750,7 +754,7 @@ public class MainController {
         }
     }
 
-    public boolean loadFileOnClick(){
+    public boolean loadFileOnClick() {
         try {
             List<String> acceptedFileTypes = new ArrayList<>();
             acceptedFileTypes.add("*.bin");
@@ -766,16 +770,16 @@ public class MainController {
                 loadFile(file);
                 return true;
             } 
-            return false;
         } catch (FileTypeNotSupportedException ex) {
             AlertController.showError("File type not supported",
                     "File type not supported: " + ex.getFileType(), ex);
-            return false;
+        } catch (ApplicationException ex) {
+            AlertController.showError(ex);
         } catch (Exception ex) {
             AlertController.showError("Unexpected error",
                     "Something unexpected happened, please try again", ex);
-            return false;
         }
+        return false;
     }
 
     public void loadFile(File file) throws Exception {
@@ -790,10 +794,8 @@ public class MainController {
                 canvas.getMapState().setTypesToBeDrawn(new ArrayList<>());
 
                 OSMReader reader = new OSMReader(is);
-                this.model = new Model(reader);
+                setModel(new Model(reader));
                 reader.destroy();
-                reader = null;
-                mapCanvasWrapper.mapCanvas.setModel(model);
 
                 ArrayList<Type> list = new ArrayList<>(Arrays.asList(Type.getTypes()));
                 canvas.getMapState().setTypesToBeDrawn(list);
@@ -809,8 +811,13 @@ public class MainController {
     }
 
     private void setModelFromBinary(InputStream is) throws IOException, ClassNotFoundException {
-        this.model = (Model) FileController.loadBinary(is);
+        setModel((Model) FileController.loadBinary(is));
+    }
+
+    private void setModel(Model model) {
+        this.model = model;
         mapCanvasWrapper.mapCanvas.setModel(model);
+        routeController.setModel(model);
     }
 
     private void swapStartAndDestination() {

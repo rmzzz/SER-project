@@ -1,34 +1,42 @@
 package bong.controllers;
 
 import bong.OSMReader.MercatorProjector;
+import bong.OSMReader.Model;
 import bong.OSMReader.Node;
-import bong.canvas.LinePath;
 import bong.canvas.MapCanvas;
+import bong.model.RouteModel;
 import bong.routeFinding.*;
 import javafx.geometry.Point2D;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class RouteController {
-
+    private Model model;
+    private RouteModel routeModel;
     private MapCanvas canvas;
 
-    public RouteController(MapCanvas canvas) {
+    public RouteController(Model model, MapCanvas canvas) {
+        this.model = model;
         this.canvas = canvas;
-
+        routeModel = new RouteModel();
+        canvas.getMapState().setRouteModel(routeModel);
     }
 
     private ArrayList<Edge> route = new ArrayList<>();
     private Dijkstra dijkstra;
-    private LinePath drawableRoute;
+
     private double routeTime;
     private double routeDistance;
     private int roundaboutCounter = 0;
     private Node lastInstructionNode;
     private String lastActionInstruction;
-    private ArrayList<Instruction> instructions = new ArrayList<>();
+
+    public RouteModel getRouteModel() {
+        return routeModel;
+    }
 
     public Iterable<Edge> getRoute() {
         return route;
@@ -42,10 +50,6 @@ public class RouteController {
         return dijkstra;
     }
 
-    public LinePath getDrawableRoute() {
-        return drawableRoute;
-    }
-
     public void setRouteTime(double newTime) {
         routeTime = newTime;
     }
@@ -54,8 +58,8 @@ public class RouteController {
         routeDistance = newDistance;
     }
 
-    public ArrayList<Instruction> getInstructions() {
-        return instructions;
+    public List<Instruction> getInstructions() {
+        return routeModel.getInstructions();
     }
 
     public String getLastActionInstruction() {
@@ -64,10 +68,13 @@ public class RouteController {
 
     public void clearRoute() {
         route = null;
-        instructions = null;
         dijkstra = null;
-        drawableRoute = null;
-        canvas.repaint();
+        lastInstructionNode = null;
+        lastActionInstruction = null;
+        if (routeModel.hasRoute()) {
+            routeModel.clear();
+            canvas.repaint();
+        }
     }
 
     public double calculateTurn(Edge prevEdge, Edge currEdge) {
@@ -123,7 +130,7 @@ public class RouteController {
         } else {
             instruction += prevEdgeName + " for " + roundedLength + " m";
         }
-        instructions.add(new Instruction(instruction, lastInstructionNode));
+        routeModel.addInstruction(new Instruction(instruction, lastInstructionNode));
         lastActionInstruction = null;
         lastInstructionNode = currEdge.getTailNode();
     }
@@ -178,7 +185,9 @@ public class RouteController {
 
     public void generateRouteInfo(ArrayList<Edge> list, String vehicle, Graph graph) {
 
-        instructions = new ArrayList<>();
+        //instructions = new ArrayList<>();
+        routeModel.getInstructions().clear(); // TODO Ramiz: check why instructions are reset here
+
         routeDistance = 0;
         routeTime = 0;
 
@@ -227,7 +236,7 @@ public class RouteController {
             routeDistance += distance;
             addTimeToTotal(vehicle, currEdge, distance);
         }
-        instructions.add(new Instruction("You have arrived at your destination", list.getLast().getHeadNode()));
+        routeModel.addInstruction(new Instruction("You have arrived at your destination", list.getLast().getHeadNode()));
     }
 
     public ArrayList<Edge> singleDirectRoute(ArrayList<Edge> route) {
@@ -275,19 +284,25 @@ public class RouteController {
             floats[i + 1] = currentNode.getLat();
         }
 
-        drawableRoute = new LinePath(floats);
-
+        routeModel.setDrawableRoute(floats);
+        canvas.getMapState().setRouteModel(routeModel);
         canvas.repaint();
     }
 
     public void setDijkstra(long startPoint, long endPoint, String vehicle, boolean shortestRoute, boolean useBidirectional, boolean useAStar) throws Exception{
-        dijkstra = new Dijkstra(canvas.getMapState().getModel().getGraph(), startPoint, endPoint, vehicle, shortestRoute, useBidirectional, useAStar);
+        dijkstra = new Dijkstra(model.getGraph(), startPoint, endPoint, vehicle, shortestRoute, useBidirectional, useAStar);
         setRoute(useBidirectional);
-        generateRouteInfo(route, vehicle, canvas.getMapState().getModel().getGraph());
+        generateRouteInfo(route, vehicle, model.getGraph());
+        canvas.getMapState().setRouteModel(routeModel);
         canvas.repaint();
     }
 
     public double getRouteTime() {
         return routeTime;
+    }
+
+    public void setModel(Model model) {
+        this.model = model;
+        routeModel.clear();
     }
 }

@@ -4,12 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-import bong.canvas.Drawer;
-import bong.canvas.MapCanvas;
-
-/**
- * BoundTest
- */
 public class BoundTest {
 
     @Test
@@ -19,7 +13,5 @@ public class BoundTest {
         assertEquals(0f, bound.getMaxLat());
         assertEquals(1f, bound.getMinLon());
         assertEquals(1f, bound.getMaxLon());
-        MapCanvas canvas = new MapCanvas();
-        bound.draw(new Drawer(canvas.getGraphicsContext2D()), 1d, true);
     }
 }

@@ -1,8 +1,7 @@
 package bong.canvas;
 
 import bong.OSMReader.*;
-import bong.controllers.MainController;
-import bong.controllers.RouteController;
+import bong.model.RouteModel;
 import bong.routeFinding.*;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
@@ -10,8 +9,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.transform.Affine;
 import java.util.*;
 
-public class MapCanvas extends Canvas  {
-
+public class MapCanvas extends Canvas {
     MapRenderer mapRenderer;
     MapState mapState;
 
@@ -20,7 +18,7 @@ public class MapCanvas extends Canvas  {
     private Pin currentPin;
     private RouteOriginIndicator currentRouteOrigin;
     private RouteDestinationIndicator currentRouteDestination;
-    private RouteController routeController = new RouteController(this);
+
     private boolean showStreetNodeCloseToMouse = false;
 
     public RouteDestinationIndicator getCurrentRouteDestination() {
@@ -65,8 +63,8 @@ public class MapCanvas extends Canvas  {
          this.mapRenderer.repaint(this);
     }
 
-    public void showDijkstraTree(){
-        this.mapRenderer.showDijkstraTree(this.routeController);
+    public void showDijkstraTree(Dijkstra dijkstra){
+        this.mapRenderer.showDijkstraTree(dijkstra);
     }
 
     public void setModel(Model model) {
@@ -109,18 +107,18 @@ public class MapCanvas extends Canvas  {
         this.destinationNode = dest;
     }
 
-	public void showStreetNearMouse(MainController mainController, MouseEvent e) {
+	public void showStreetNearMouse(Model model, MouseEvent e) {
 	    try {
 	        Point2D translatedCoords = this.mapRenderer.getTrans().inverseTransform(e.getX(), e.getY());
-	        Node nearestNode = (Node) mainController.model.getRoadKDTree().nearestNeighborForEdges(translatedCoords, "Walk");
+	        Node nearestNode = model.getRoadKDTree().nearestNeighborForEdges(translatedCoords, "Walk");
 	        long nodeAsLong = nearestNode.getAsLong();
-	        Edge streetEdge = mainController.model.getGraph().getAdj().get(nodeAsLong).getFirst();
+	        Edge streetEdge = model.getGraph().getAdj().get(nodeAsLong).getFirst();
 	        double bestAngle = Double.POSITIVE_INFINITY;
 
 
 	        Point2D mouseRelativeToNodeVector = new Point2D(translatedCoords.getX() - nearestNode.getLon(), translatedCoords.getY() - nearestNode.getLat());
 
-	        for (Edge edge : mainController.model.getGraph().getAdj().get(nearestNode.getAsLong())) {
+	        for (Edge edge : model.getGraph().getAdj().get(nearestNode.getAsLong())) {
 	            Node otherNode = edge.otherNode(nodeAsLong);
 	            Point2D otherNodeRelativeToNodeVector = new Point2D(otherNode.getLon() - nearestNode.getLon(), otherNode.getLat() - nearestNode.getLat());
 
@@ -159,10 +157,6 @@ public class MapCanvas extends Canvas  {
 
     public MapState getMapState() {
         return mapState;
-    }
-
-    public RouteController getRouteController() {
-        return routeController;
     }
 
     public Node getStartNode() {

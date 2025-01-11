@@ -3,8 +3,10 @@
  */
 package bong;
 
-import java.io.IOException;
+import java.net.URL;
+
 import bong.controllers.MainController;
+import bong.util.ResourceLoader;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -15,24 +17,27 @@ import javafx.stage.Stage;
 public class App extends Application {
     static Stage primaryStage;
 
+    final ResourceLoader resourceLoader = new AppResourceLoader();
+
     @Override
     public void start(Stage primaryStage) throws Exception {
         App.primaryStage = primaryStage;
 
-        Parent root = App.loadFXML("main");
+        FXMLLoader fxmlLoader = new FXMLLoader(resourceLoader.getViewResource("main.fxml"));
+        MainController mainController = new MainController(primaryStage, resourceLoader);
+        fxmlLoader.setController(mainController);
         primaryStage.setTitle("Bong Maps");
+
+        Parent root = fxmlLoader.load();
         Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getClassLoader().getResource("bong/views/style.css").toExternalForm());
-        primaryStage.getIcons().add(new Image(this.getClass().getClassLoader().getResourceAsStream("bong/views/bongIcon.png")));
+        URL style = resourceLoader.getViewResource("style.css");
+        scene.getStylesheets().add(style.toExternalForm());
+
+        Image icon = new Image(resourceLoader.getViewResourceAsStream("bongIcon.png"));
+        primaryStage.getIcons().add(icon);
+
         primaryStage.setScene(scene);
         primaryStage.show();
-    }
-
-    public static Parent loadFXML(String filename) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("views/" + filename + ".fxml"));
-        MainController mainController = new MainController(primaryStage);
-        fxmlLoader.setController(mainController);
-        return fxmlLoader.load();
     }
 
     public static void main(String[] args) {

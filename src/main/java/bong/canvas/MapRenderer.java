@@ -78,23 +78,22 @@ public class MapRenderer {
                 }
             }
 
-            if (mapCanvas.getRouteController().getRoute() != null) {
+            var routeModel = mapState.getRouteModel();
+            if (routeModel != null && routeModel.hasRoute()) {
                 gc.setStroke(Color.valueOf("#69c7ff"));
                 gc.setLineWidth(this.pixelwidth*3);
-                LinePath drawableRoute;
-                if ((drawableRoute = mapCanvas.getRouteController().getDrawableRoute()) != null) {
+                var route = routeModel.getDrawableRoute();
+                if (route != null) {
+                    LinePath drawableRoute = new LinePath(route);
                     drawableRoute.draw(gc, this.pixelwidth, smartTrace);
                 }
-                if(mapCanvas.getRouteController().getInstructions() != null){
-                    for(Instruction instruction : mapCanvas.getRouteController().getInstructions()){
-                        instruction.getIndicator().draw(gc, this.pixelwidth);
-                    }
+                for (Instruction instruction : routeModel.getInstructions()) {
+                    instruction.getIndicator().draw(gc, this.pixelwidth);
                 }
             }
 
-            if(drawBound) {
-                gc.setStroke(Color.BLACK);
-                mapState.getModel().getBound().draw(gc, this.pixelwidth, false);
+            if (drawBound) {
+                drawModelBound(mapState.getModel().getBound(), Color.BLACK, this.pixelwidth);
             }
 
             if (mapCanvas.getCurrentRouteOrigin() != null) mapCanvas.getCurrentRouteOrigin() .draw(gc, this.pixelwidth);
@@ -125,7 +124,9 @@ public class MapRenderer {
         scaleBar.draw(gc, this.pixelwidth, false);
         gc.setStroke(Color.BLACK);
 
-        if(!mapState.getRenderFullScreen()) renderRange.draw(gc, this.pixelwidth);
+        if (!mapState.getRenderFullScreen()) {
+            drawRange(renderRange, this.pixelwidth);
+        }
 
         if (useRegularColors) {
             gc.setStroke(Color.BLACK);
@@ -154,10 +155,37 @@ public class MapRenderer {
                 if (type.shouldHaveFill()) gc.fill();
 
                 if(drawBoundingBox) {
-                    element.getBoundingBox().draw(gc, this.pixelwidth/2f);
+                    drawRange(element.getBoundingBox(), this.pixelwidth/2);
                 }
             }
         }
+    }
+
+    private void drawModelBound(Bound bound, Color color, double scale) {
+        float minLon = bound.getMinLon();
+        float minLat = bound.getMinLat();
+        float maxLon = bound.getMaxLon();
+        float maxLat = bound.getMaxLat();
+        gc.setStroke(color);
+        gc.beginPath();
+        gc.setLineWidth(scale);
+        gc.moveTo(minLon, minLat);
+        gc.lineTo(minLon, maxLat);
+        gc.lineTo(maxLon, maxLat);
+        gc.lineTo(maxLon, minLat);
+        gc.lineTo(minLon, minLat);
+        gc.stroke();
+    }
+
+    private void drawRange(Range range, double lineWidth) {
+        float minX = range.getMinX();
+        float minY = range.getMinY();
+        float maxX = range.getMaxX();
+        float maxY = range.getMaxY();
+        gc.setStroke(Color.BLUE);
+        gc.setLineWidth(lineWidth);
+        gc.strokeRect(minX, minY, maxX-minX, maxY-minY);
+        gc.stroke();
     }
 
     private void setFillAndStroke(Type type, boolean useRegularColors) {
@@ -192,9 +220,8 @@ public class MapRenderer {
 
     }
 
-    public void showDijkstraTree(RouteController routeController) {
-        Dijkstra dijkstra;
-        if ((dijkstra = routeController.getDijkstra()) != null) {
+    public void showDijkstraTree(Dijkstra dijkstra) {
+        if (dijkstra != null) {
             for (Map.Entry<Long, Edge> entry : dijkstra.getAllEdgeTo().entrySet()) {
                 new LinePath(entry.getValue().getTailNode(), entry.getValue().getHeadNode()).draw(gc, 1, false);
             }

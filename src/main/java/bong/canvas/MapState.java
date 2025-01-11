@@ -1,11 +1,13 @@
 package bong.canvas;
 
 import bong.OSMReader.Model;
+import bong.model.RouteModel;
 
 import java.util.List;
 
 public class MapState {
     private Model model;
+    private RouteModel routeModel;
     private List<Type> typesToBeDrawn;
     private boolean showRoadNodes;
     private boolean renderFullScreen;
@@ -19,6 +21,10 @@ public class MapState {
 
     public Model getModel() {
         return model;
+    }
+
+    public RouteModel getRouteModel() {
+        return routeModel;
     }
 
     public boolean getShowRoadNodes() {
@@ -46,6 +52,10 @@ public class MapState {
     public void setModel(Model model) {
         this.model = model;
 //        resetView();
+    }
+
+    public void setRouteModel(RouteModel routeModel) {
+        this.routeModel = routeModel;
     }
 
     public void setRenderFullScreen(boolean renderFullScreen) {

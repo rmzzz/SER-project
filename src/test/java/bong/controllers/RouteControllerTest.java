@@ -8,35 +8,71 @@ import bong.routeFinding.Edge;
 import bong.routeFinding.Graph;
 import bong.routeFinding.Street;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RouteControllerTest {
-    private RouteController routeController = new RouteController(new MapCanvas());
+    private RouteController routeController;
+
+    @BeforeEach
+    public void setUp() {
+        routeController = new RouteController(null, new MapCanvas());
+    }
 
     @Test
-    public void addTimeToTotalTest() {
-        Assertions.assertEquals(0, routeController.getRouteTime());
+    public void addTimeToTotalByCar() {
+        assertEquals(0, routeController.getRouteTime());
         Node node1 = new Node(1, 1, 1);
         Node node2 = new Node(2, 4, 5);
         Street street = new Street(new ArrayList<>(), 80);
         Edge edge = new Edge(node1, node2, street);
+
         routeController.addTimeToTotal("Car", edge, 50);
 
-        Assertions.assertEquals(2.25, routeController.getRouteTime());
+        assertEquals(2.25, routeController.getRouteTime());
+    }
+    @Test
+    public void addTimeToTotalByWalk() {
+        assertEquals(0, routeController.getRouteTime());
+        Node node1 = new Node(1, 1, 1);
+        Node node2 = new Node(2, 4, 5);
+        Street street = new Street(new ArrayList<>(), 80);
+        Edge edge = new Edge(node1, node2, street);
 
-        routeController = new RouteController(new MapCanvas());
         routeController.addTimeToTotal("Walk", edge, 110);
-        Assertions.assertEquals(100, routeController.getRouteTime(), 0.0001);
 
-        routeController = new RouteController(new MapCanvas());
+        assertEquals(100, routeController.getRouteTime(), 0.0001);
+    }
+
+    @Test
+    public void addTimeToTotalByBicycle() {
+        assertEquals(0, routeController.getRouteTime());
+        Node node1 = new Node(1, 1, 1);
+        Node node2 = new Node(2, 4, 5);
+        Street street = new Street(new ArrayList<>(), 80);
+        Edge edge = new Edge(node1, node2, street);
+
         routeController.addTimeToTotal("Bicycle", edge, 66);
-        Assertions.assertEquals(11, routeController.getRouteTime());
 
-        routeController = new RouteController(new MapCanvas());
+        assertEquals(11, routeController.getRouteTime());
+    }
+
+    @Test
+    public void addTimeToTotalByInvalid() {
+        assertEquals(0, routeController.getRouteTime());
+        Node node1 = new Node(1, 1, 1);
+        Node node2 = new Node(2, 4, 5);
+        Street street = new Street(new ArrayList<>(), 80);
+        Edge edge = new Edge(node1, node2, street);
+
         routeController.addTimeToTotal("bruh", edge, 66);
-        Assertions.assertEquals(0, routeController.getRouteTime());
+
+        assertEquals(0, routeController.getRouteTime());
     }
 
     @Test
@@ -48,31 +84,29 @@ public class RouteControllerTest {
         double actual;
         expected = -104.03624346792648;
         actual = routeController.calculateTurn(prevEdge1, currEdge1);
-        Assertions.assertEquals(expected, actual);
+        assertEquals(expected, actual);
 
         Edge prevEdge2 = new Edge(new Node(1, 5, 6), new Node(2, 9, 10), null);
         Edge currEdge2 = new Edge(new Node(2, 9, 10), new Node(2, 7, 12), null);
         actual = routeController.calculateTurn(prevEdge2, currEdge2);
         expected = 90.0;
-        Assertions.assertEquals(expected, actual);
+        assertEquals(expected, actual);
 
         Edge prevEdge3 = new Edge(new Node(1, 5, 6), new Node(2, 4, 1), null);
         Edge currEdge3 = new Edge(new Node(2, 4, 1), new Node(3, 5, 7), null);
         actual = routeController.calculateTurn(prevEdge3, currEdge3);
         expected = -1.8476102659946245;
-        Assertions.assertEquals(expected, actual, 0.0001);
+        assertEquals(expected, actual, 0.0001);
 
         Edge prevEdge4 = new Edge(new Node(1, 0, 0), new Node(2, -10, 1), null);
         Edge currEdge4 = new Edge(new Node(2, -10, 1), new Node(3, -11, -9), null);
         actual = routeController.calculateTurn(prevEdge4, currEdge4);
         expected = 90;
-        Assertions.assertEquals(expected, actual, 0.0001);
+        assertEquals(expected, actual, 0.0001);
     }
 
     @Test
     public void setActionInstructionTest() {
-        routeController = new RouteController(new MapCanvas());
-
         Node node1 = new Node(1, 1, 1);
         Node node2 = new Node(2, 4, 5);
 
@@ -90,7 +124,7 @@ public class RouteControllerTest {
         Edge currEdge = new Edge(node1, node2, currStreet);
 
         routeController.setActionInstruction(prevEdge, currEdge, 1);
-        Assertions.assertEquals("Take the ramp onto the motorway", routeController.getLastActionInstruction());
+        assertEquals("Take the ramp onto the motorway", routeController.getLastActionInstruction());
 
         tags.clear();
         tags.add("highway");
@@ -99,23 +133,24 @@ public class RouteControllerTest {
         currEdge = new Edge(node1, node2, currStreet);
 
         routeController.setActionInstruction(prevEdge, currEdge, 1);
-        Assertions.assertEquals("Take the off-ramp", routeController.getLastActionInstruction());
+        assertEquals("Take the off-ramp", routeController.getLastActionInstruction());
 
         prevEdge = new Edge(node1, node2, currStreet);
         routeController.setActionInstruction(prevEdge, currEdge, 2);
-        Assertions.assertEquals("Take exit number 2 in the roundabout", routeController.getLastActionInstruction());
+        assertEquals("Take exit number 2 in the roundabout", routeController.getLastActionInstruction());
 
         Edge prevEdge1 = new Edge(new Node(1, 5, 6), new Node(2, 9, 10), currStreet);
         Edge currEdge1 = new Edge(new Node(2, 9, 10), new Node(2, 12, 5), currStreet);
         routeController.setActionInstruction(prevEdge1, currEdge1, 0);
-        Assertions.assertEquals("Turn left", routeController.getLastActionInstruction());
+        assertEquals("Turn left", routeController.getLastActionInstruction());
 
         Edge prevEdge2 = new Edge(new Node(1, 5, 6), new Node(2, 9, 10), currStreet);
         Edge currEdge2 = new Edge(new Node(2, 9, 10), new Node(2, 7, 12), currStreet);
         routeController.setActionInstruction(prevEdge2, currEdge2, 0);
-        Assertions.assertEquals("Turn right", routeController.getLastActionInstruction());
+        assertEquals("Turn right", routeController.getLastActionInstruction());
 
-        routeController = new RouteController(new MapCanvas());
+//        routeController = new RouteController(new MapCanvas());
+        routeController.clearRoute();
 
         tags.add("junction");
         tags.add("roundabout");
@@ -141,28 +176,27 @@ public class RouteControllerTest {
         routeController.setRouteTime(900.0);
         expected = 15 + " min";
         actual = routeController.timeString();
-        Assertions.assertEquals(expected, actual);
+        assertEquals(expected, actual);
 
         routeController.setRouteTime(9000.0);
         expected = 2 + " h " + 30 + " min";
         actual = routeController.timeString();
-        Assertions.assertEquals(expected, actual);
+        assertEquals(expected, actual);
     }
 
     @Test
     public void addInstructionTest() {
-        routeController = new RouteController(new MapCanvas());
         routeController.setLastInstructionNode(new Node(1, 2, 3));
         Edge edge = new Edge(new Node(1, 5, 6), new Node(2, 9, 10), null);
         routeController.addInstruction("test street", 1500, edge);
         String expected = "Follow test street for 1.5 km";
         String actual = routeController.getInstructions().get(0).getInstruction();
-        Assertions.assertEquals(expected, actual);
+        assertEquals(expected, actual);
 
         routeController.addInstruction("test street", 15000, edge);
         expected = "Follow test street for 15 km";
         actual = routeController.getInstructions().get(1).getInstruction();
-        Assertions.assertEquals(expected, actual);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -173,17 +207,17 @@ public class RouteControllerTest {
         routeController.setRouteDistance(101.1);
         expected = 101 + " m";
         actual = routeController.distanceString();
-        Assertions.assertEquals(expected, actual);
+        assertEquals(expected, actual);
 
         routeController.setRouteDistance(1011.1);
         expected = 1.01 + " km";
         actual = routeController.distanceString();
-        Assertions.assertEquals(expected, actual);
+        assertEquals(expected, actual);
 
         routeController.setRouteDistance(101234.56);
         expected = 101 + " km";
         actual = routeController.distanceString();
-        Assertions.assertEquals(expected, actual);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -205,7 +239,7 @@ public class RouteControllerTest {
         ArrayList<Edge> actual = routeController.singleDirectRoute(route);
 
         for (int i = 0; i < 4; i++) {
-            Assertions.assertEquals(i, actual.get(i).getTailNode().getLat());
+            assertEquals(i, actual.get(i).getTailNode().getLat());
         }
 
         route.clear();
@@ -218,7 +252,7 @@ public class RouteControllerTest {
         actual = routeController.singleDirectRoute(route);
 
         for (int i = 0; i < 4; i++) {
-            Assertions.assertEquals(i, actual.get(i).getTailNode().getLat());
+            assertEquals(i, actual.get(i).getTailNode().getLat());
         }
     }
 
@@ -227,19 +261,19 @@ public class RouteControllerTest {
         Model model = new Model(new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/smallMapStmaz.osm")));
         MapCanvas canvas = new MapCanvas();
         canvas.getMapState().setModelWithoutReset(model);
-        routeController = new RouteController(canvas);
+        routeController = new RouteController(model, canvas);
         routeController.setDijkstra(11654496977L, 1677959389L, "Car", true, true, true);
         routeController.setRoute(true);
 
         var actualRoute = (ArrayList<Edge>) routeController.getRoute();
         var actualInstructions = routeController.getInstructions();
         var actualDijkstra = routeController.getDijkstra().getAllEdgeTo();
-        var actualDrawableRoute = routeController.getDrawableRoute();
+        var actualDrawableRoute = routeController.getRouteModel().getDrawableRoute();
 
-        Assertions.assertEquals(34, actualRoute.size());
-        Assertions.assertEquals(3, actualInstructions.size());
-        Assertions.assertEquals(92, actualDijkstra.size());
-        Assertions.assertEquals(70, actualDrawableRoute.getCoords().length);
+        assertEquals(34, actualRoute.size());
+        assertEquals(3, actualInstructions.size());
+        assertEquals(92, actualDijkstra.size());
+        assertEquals(70, actualDrawableRoute.length);
     }
 
     @Test
@@ -248,17 +282,17 @@ public class RouteControllerTest {
             Model model = new Model(new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/smallMapStmaz.osm")));
             MapCanvas canvas = new MapCanvas();
             canvas.getMapState().setModelWithoutReset(model);
-            routeController = new RouteController(canvas);
+            routeController = new RouteController(model, canvas);
             routeController.setDijkstra(11654496977L, 1677959389L, "Car", true, true, true);
             routeController.setRoute(true);
             routeController.clearRoute();
 
-            Assertions.assertNull(routeController.getRoute());
-            Assertions.assertNull(routeController.getInstructions());
-            Assertions.assertNull(routeController.getDijkstra());
-            Assertions.assertNull(routeController.getDrawableRoute());
+            assertNull(routeController.getRoute());
+            assertEquals(List.of(), routeController.getInstructions());
+            assertNull(routeController.getDijkstra());
+            assertNull(routeController.getRouteModel().getDrawableRoute());
         } catch (Exception e) {
-            Assertions.fail();
+            Assertions.fail(e);
         }
     }
 
@@ -307,13 +341,10 @@ public class RouteControllerTest {
         route.add(edge3);
         route.add(edge5);
 
-        routeController = new RouteController(new MapCanvas());
         routeController.generateRouteInfo(route, "Car", graph);
         String actual = routeController.getInstructions().get(1).getInstruction();
 
-        Assertions.assertEquals("Take exit number 1 in the roundabout and follow road for 1 m", actual);
-
-
+        assertEquals("Take exit number 1 in the roundabout and follow road for 1 m", actual);
     }
 
 }
