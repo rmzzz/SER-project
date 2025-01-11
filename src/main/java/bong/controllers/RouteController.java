@@ -3,7 +3,6 @@ package bong.controllers;
 import bong.OSMReader.MercatorProjector;
 import bong.OSMReader.Model;
 import bong.OSMReader.Node;
-import bong.canvas.LinePath;
 import bong.canvas.MapCanvas;
 import bong.model.RouteModel;
 import bong.routeFinding.*;
@@ -34,6 +33,9 @@ public class RouteController {
     private Node lastInstructionNode;
     private String lastActionInstruction;
 
+    public RouteModel getRouteModel() {
+        return routeModel;
+    }
 
     public Iterable<Edge> getRoute() {
         return route;
@@ -45,10 +47,6 @@ public class RouteController {
 
     public Dijkstra getDijkstra() {
         return dijkstra;
-    }
-
-    public LinePath getDrawableRoute() {
-        return routeModel.getDrawableRoute();
     }
 
     public void setRouteTime(double newTime) {
@@ -283,7 +281,7 @@ public class RouteController {
             floats[i + 1] = currentNode.getLat();
         }
 
-        routeModel.setDrawableRoute(new LinePath(floats));
+        routeModel.setDrawableRoute(floats);
         canvas.setRouteModel(routeModel);
         canvas.repaint();
     }

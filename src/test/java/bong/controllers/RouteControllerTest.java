@@ -268,12 +268,12 @@ public class RouteControllerTest {
         var actualRoute = (ArrayList<Edge>) routeController.getRoute();
         var actualInstructions = routeController.getInstructions();
         var actualDijkstra = routeController.getDijkstra().getAllEdgeTo();
-        var actualDrawableRoute = routeController.getDrawableRoute();
+        var actualDrawableRoute = routeController.getRouteModel().getDrawableRoute();
 
         assertEquals(34, actualRoute.size());
         assertEquals(3, actualInstructions.size());
         assertEquals(92, actualDijkstra.size());
-        assertEquals(70, actualDrawableRoute.getCoords().length);
+        assertEquals(70, actualDrawableRoute.length);
     }
 
     @Test
@@ -287,10 +287,10 @@ public class RouteControllerTest {
             routeController.setRoute(true);
             routeController.clearRoute();
 
-            assertEquals(null, routeController.getRoute());
+            assertNull(routeController.getRoute());
             assertEquals(List.of(), routeController.getInstructions());
-            assertEquals(null, routeController.getDijkstra());
-            assertEquals(null, routeController.getDrawableRoute());
+            assertNull(routeController.getDijkstra());
+            assertNull(routeController.getRouteModel().getDrawableRoute());
         } catch (Exception e) {
             Assertions.fail(e);
         }

@@ -136,9 +136,10 @@ public class MapCanvas extends Canvas {
             if (routeModel.hasRoute()) {
                 gc.setStroke(Color.valueOf("#69c7ff"));
                 gc.setLineWidth(pixelwidth*3);
-                LinePath drawableRoute = routeModel.getDrawableRoute();
+                float[] drawableRoute = routeModel.getDrawableRoute();
                 if (drawableRoute != null) {
-                    drawableRoute.draw(gc, pixelwidth, smartTrace);
+                    LinePath linePath = new LinePath(drawableRoute);
+                    linePath.draw(gc, pixelwidth, smartTrace);
                 }
                 if (routeModel.getInstructions() != null){
                     for(Instruction instruction : routeModel.getInstructions()) {
