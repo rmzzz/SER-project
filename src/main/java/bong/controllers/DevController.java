@@ -76,7 +76,7 @@ public class DevController {
                 CheckBox check = (CheckBox) node;
                 check.setSelected(true);
             }
-            canvas.getMapState().setTypesToBeDrawn(Arrays.asList(Type.getTypes()));
+            canvas.getMapState().setTypesToBeDrawn(Arrays.asList(Type.getTypes()), canvas);
         });
 
         deselectall.setOnAction(e -> {
@@ -84,7 +84,7 @@ public class DevController {
                 CheckBox check = (CheckBox) node;
                 check.setSelected(false);
             }
-            canvas.getMapState().setTypesToBeDrawn(new ArrayList<>());
+            canvas.getMapState().setTypesToBeDrawn(new ArrayList<>(), canvas);
         });
 
         smartTraceToggle.setSelected(true);
@@ -111,7 +111,7 @@ public class DevController {
         vehicle.getSelectionModel().selectLast();
 
         showDijkstra.setOnAction(e -> {
-            canvas.showDijkstraTree(routeController.getDijkstra());
+            canvas.getMapRenderer().showDijkstraTree(routeController.getDijkstra());
         });
 
         findRoute.setOnAction(e -> {
@@ -143,18 +143,18 @@ public class DevController {
         fullscreenRange.selectedProperty().set(canvas.getMapState().getRenderFullScreen());
         fullscreenRange.setOnAction(e -> {
             canvas.getMapState().setRenderFullScreen(fullscreenRange.isSelected());
-            canvas.repaint();
+            canvas.getMapRenderer().repaint(canvas);
         });
 
         drawBoundingBox.selectedProperty().set(MapRenderer.drawBoundingBox);
         drawBoundingBox.setOnAction(e -> {
             MapRenderer.drawBoundingBox = drawBoundingBox.isSelected();
-            canvas.repaint();
+            canvas.getMapRenderer().repaint(canvas);
         });
 
         showClosestNode.setSelected(false);
         showClosestNode.setOnAction(e -> {
-            canvas.setShowStreetNodeCloseToMouse(showClosestNode.isSelected());
+            canvas.getMapMouseInteraction().setShowStreetNodeCloseToMouse(showClosestNode.isSelected());
         });
 
         drawBound.setSelected(canvas.getMapRenderer().getDrawBound());
@@ -182,6 +182,6 @@ public class DevController {
             CheckBox check = (CheckBox) node;
             if (check.isSelected()) typesToBeDrawn.add((Type) check.getUserData());
         }
-        canvas.getMapState().setTypesToBeDrawn(typesToBeDrawn);
+        canvas.getMapState().setTypesToBeDrawn(typesToBeDrawn, canvas);
     }
 }

@@ -1,5 +1,6 @@
 package bong.canvas;
 
+import javafx.geometry.Point2D;
 import javafx.scene.transform.Affine;
 import org.junit.jupiter.api.Test;
 
@@ -11,21 +12,31 @@ class MapCanvasTest {
 
     @Test
     void clearOriginDestinationTest() {
-        canvas.setCurrentRouteDestination();
-        canvas.setCurrentRouteOrigin();
+        canvas.getMapRouteManager().setCurrentRouteDestination();
+        canvas.getMapRouteManager().setCurrentRouteOrigin();
 
-        assertEquals(1, canvas.getCurrentRouteDestination().centerX);
-        assertEquals(1, canvas.getCurrentRouteOrigin().centerX);
+        assertEquals(1, canvas.getMapRouteManager().getCurrentRouteDestination().centerX);
+        assertEquals(1, canvas.getMapRouteManager().getCurrentRouteOrigin().centerX);
 
-        canvas.clearOriginDestination();
-        assertNull(canvas.getCurrentRouteDestination());
-        assertNull(canvas.getCurrentRouteOrigin());
+        canvas.getMapRouteManager().clearOriginDestination(canvas);
+        assertNull(canvas.getMapRouteManager().getCurrentRouteDestination());
+        assertNull(canvas.getMapRouteManager().getCurrentRouteOrigin());
+    }
+
+    @Test
+    void getModelCoordinatesNonInvertible() {
+        Affine trans;
+        canvas = new MapCanvas();
+        trans = canvas.getMapRenderer().getTrans();
+        trans.prependScale(0, 0);  // non-invertible
+        Point2D result = canvas.getMapRenderer().getModelCoordinates(1.0, 1.0); // NonInvertibleTransformException
+        assertNull(result);
     }
 
     @Test
     void updateSearchRangeTest() {
         canvas = new MapCanvas();
-        canvas.repaint();
+        canvas.getMapRenderer().repaint(canvas);
         canvas.getMapState().setRenderFullScreen(false);
         canvas.getMapRenderer().updateSearchRange(canvas);
 

@@ -236,7 +236,7 @@ public class MainController {
         hoverToShowStreet.setSelected(showStreetOnHover);
         hoverToShowStreet.setOnAction(e -> {
             showStreetOnHover = hoverToShowStreet.isSelected();
-            canvas.repaint();
+            canvas.getMapRenderer().repaint(canvas);
         });
 
         zoomToArea.setOnAction(e ->  {
@@ -256,7 +256,7 @@ public class MainController {
             routeController.clearRoute();
             destinationAddress = currentAddress;
             destinationPoint = currentPoint;
-            canvas.setRouteDestination(destinationPoint);
+            canvas.getMapRouteManager().setRouteDestination(destinationPoint, canvas);
             showDirectionsMenu();
         });
 
@@ -265,12 +265,12 @@ public class MainController {
             routeController.clearRoute();
             startAddress = currentAddress;
             startPoint = currentPoint;
-            canvas.setRouteOrigin(startPoint);
+            canvas.getMapRouteManager().setRouteOrigin(startPoint, canvas);
             showDirectionsMenu();
         });
 
         pinInfoClose.setOnAction(e -> {
-            canvas.nullPin();
+            canvas.getMapPinManager().nullPin(canvas);
             hidePinInfo();
         });
 
@@ -290,7 +290,7 @@ public class MainController {
 
         canvas.setOnMouseMoved(e -> {
             if (showStreetOnHover) {
-                canvas.showStreetNearMouse(model, e);
+                canvas.getMapMouseInteraction().showStreetNearMouse(model, e, canvas);
             }
         });
 
@@ -310,7 +310,7 @@ public class MainController {
             hidePinInfo();
             if (searchField.isFocused()) setCurrentQuery(searchField.getText().trim());
             if (searchField.getText().isEmpty()) suggestionsContainer.getChildren().clear();
-            canvas.nullPin();
+            canvas.getMapPinManager().nullPin(canvas);
         });
 
         searchField.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
@@ -396,7 +396,7 @@ public class MainController {
         searchField.setText(a.toString());
         searchField.positionCaret(searchField.getText().length());
         canvas.getMapRenderer().zoomToPoint(1, a.getLon(),  a.getLat(), canvas);
-        canvas.setPin(a.getLon(), a.getLat());
+        canvas.getMapPinManager().setPin(a.getLon(), a.getLat(), canvas);
         suggestionsContainer.getChildren().clear();
         showPinMenu();
     }
@@ -404,7 +404,7 @@ public class MainController {
     private void peekAddress(Address a) {
         searchField.setText(a.toString());
         canvas.getMapRenderer().zoomToPoint(1, a.getLon(),  a.getLat(), canvas);
-        canvas.setPin(a.getLon(), a.getLat());
+        canvas.getMapPinManager().setPin(a.getLon(), a.getLat(), canvas);
         showPinMenu();
     }
 
@@ -438,7 +438,7 @@ public class MainController {
             destinationAddress = null;
             destinationPoint = null;
             startPoint = null;
-            canvas.clearOriginDestination();
+            canvas.getMapRouteManager().clearOriginDestination(canvas);
             directionsInfo.setVisible(false);
         });
     }
@@ -451,7 +451,7 @@ public class MainController {
 
         Node startNode = ((Node) model.getRoadKDTree().nearestNeighborForEdges(startPoint, vehicle));
         Node destinationNode = ((Node) model.getRoadKDTree().nearestNeighborForEdges(destinationPoint, vehicle));
-        canvas.setStartDestPoint(startNode, destinationNode);
+        canvas.getMapRouteManager().setStartDestPoint(startNode, destinationNode);
 
         long startRoadId = startNode.getAsLong();
         long destinationRoadId = destinationNode.getAsLong();
@@ -512,7 +512,7 @@ public class MainController {
     private void placePin() {
         try {
             Point2D point2D = canvas.getMapRenderer().getTrans().inverseTransform(lastMouse.getX(), lastMouse.getY());
-            canvas.setPin((float) point2D.getX(), (float) point2D.getY());
+            canvas.getMapPinManager().setPin((float) point2D.getX(), (float) point2D.getY(), canvas);
             showPinMenu();
         } catch (NonInvertibleTransformException ex) {
             ex.printStackTrace();
@@ -558,13 +558,13 @@ public class MainController {
             }
         }
 
-        canvas.getMapState().setTypesToBeDrawn(typesToBeDrawn);
+        canvas.getMapState().setTypesToBeDrawn(typesToBeDrawn, canvas);
     }
 
     private void addItemToMyPoints(PointOfInterest poi) {
         MenuItem item = new MenuItem(poi.getName());
         item.setOnAction(a -> {
-            canvas.setPin(poi.getLon(), poi.getLat());
+            canvas.getMapPinManager().setPin(poi.getLon(), poi.getLat(), canvas);
             canvas.getMapRenderer().zoomToPoint(1, poi.getLon(), poi.getLat(), canvas);
             showPinMenu();
         });
@@ -600,7 +600,7 @@ public class MainController {
     public void setPOIButton() {
         AtomicBoolean POIExists = new AtomicBoolean(false);
 
-        if (poiController.POIContains(canvas.getCurrentPin().getCenterX(), canvas.getCurrentPin().getCenterY())) {
+        if (poiController.POIContains(canvas.getMapPinManager().getCurrentPin().getCenterX(), canvas.getMapPinManager().getCurrentPin().getCenterY())) {
             POIExists.set(true);
 
             POIButton.setTooltip(setupTooltip("Remove point of interest"));
@@ -626,7 +626,7 @@ public class MainController {
                 POIExists.set(true);
                 setPOIButton();
             } else {
-                poiController.removePOI(canvas.getCurrentPin().getCenterX(), canvas.getCurrentPin().getCenterY());
+                poiController.removePOI(canvas.getMapPinManager().getCurrentPin().getCenterX(), canvas.getMapPinManager().getCurrentPin().getCenterY());
                 myPoints.getItems().clear();
                 for (PointOfInterest poi : PointsOfInterestController.getPointsOfInterest()) {
                     addItemToMyPoints(poi);
@@ -649,18 +649,18 @@ public class MainController {
 
     public void showPinMenu() {
         setPOIButton();
-        Node unprojected = MercatorProjector.unproject(canvas.getCurrentPin().getCenterX(), canvas.getCurrentPin().getCenterY());
+        Node unprojected = MercatorProjector.unproject(canvas.getMapPinManager().getCurrentPin().getCenterX(), canvas.getMapPinManager().getCurrentPin().getCenterY());
         pointCoords.setText(-unprojected.getLat() + "°N " + unprojected.getLon() + "°E");
 
-        if (model != null && model.getAddressKDTree() != null && canvas.getCurrentPin() != null) {
-            currentAddress = (Address) model.getAddressKDTree().nearestNeighbor(new Point2D(canvas.getCurrentPin().getCenterX(), canvas.getCurrentPin().getCenterY()));
+        if (model != null && model.getAddressKDTree() != null && canvas.getMapPinManager().getCurrentPin() != null) {
+            currentAddress = (Address) model.getAddressKDTree().nearestNeighbor(new Point2D(canvas.getMapPinManager().getCurrentPin().getCenterX(), canvas.getMapPinManager().getCurrentPin().getCenterY()));
         }
-            currentPoint = new Point2D(canvas.getCurrentPin().getCenterX(), canvas.getCurrentPin().getCenterY());
+            currentPoint = new Point2D(canvas.getMapPinManager().getCurrentPin().getCenterX(), canvas.getMapPinManager().getCurrentPin().getCenterY());
 
         if (currentAddress == null) {
             pointAddress.setText("No nearby address");
         } else {
-            double distance = distanceInMeters(canvas.getCurrentPin().getCenterX(), canvas.getCurrentPin().getCenterY(), currentAddress.getLon(), currentAddress.getLat());
+            double distance = distanceInMeters(canvas.getMapPinManager().getCurrentPin().getCenterX(), canvas.getMapPinManager().getCurrentPin().getCenterY(), currentAddress.getLon(), currentAddress.getLat());
             if (distance > 80) {
                 pointAddress.setText("No nearby address");
             } else {
@@ -791,14 +791,14 @@ public class MainController {
                 setModelFromBinary(is);
                 break;
             case ".osm":
-                canvas.getMapState().setTypesToBeDrawn(new ArrayList<>());
+                canvas.getMapState().setTypesToBeDrawn(new ArrayList<>(), canvas);
 
                 OSMReader reader = new OSMReader(is);
                 setModel(new Model(reader));
                 reader.destroy();
 
                 ArrayList<Type> list = new ArrayList<>(Arrays.asList(Type.getTypes()));
-                canvas.getMapState().setTypesToBeDrawn(list);
+                canvas.getMapState().setTypesToBeDrawn(list, canvas);
                 break;
             case ".zip":
                 loadFile(FileController.loadZip(file));
@@ -816,7 +816,7 @@ public class MainController {
 
     private void setModel(Model model) {
         this.model = model;
-        mapCanvasWrapper.mapCanvas.setModel(model);
+        mapCanvasWrapper.mapCanvas.getMapState().setModel(model, mapCanvasWrapper.mapCanvas);
         routeController.setModel(model);
     }
 
@@ -827,10 +827,10 @@ public class MainController {
         startPoint = destinationPoint;
         destinationAddress = tempAddress;
         destinationPoint = tempPoint;
-        canvas.setRouteOrigin(startPoint);
-        canvas.setRouteDestination(destinationPoint);
+        canvas.getMapRouteManager().setRouteOrigin(startPoint, canvas);
+        canvas.getMapRouteManager().setRouteDestination(destinationPoint, canvas);
         showDirectionsMenu();
-        canvas.repaint();
+        canvas.getMapRenderer().repaint(canvas);
     }
 
     public MapCanvas getCanvas(){

@@ -50,13 +50,11 @@ public class MapRenderer {
         gc.setStroke(prevStroke);
     }
 
-    public void repaint(MapCanvas mapCanvas) {
+    public void repaint(MapCanvasInterface mapCanvas) {
         MapState mapState = mapCanvas.getMapState();
         gc.setTransform(new Affine());
-        if (useRegularColors) gc.setFill(Type.WATER.getColor());
-        else gc.setFill(Type.WATER.getAlternateColor());
+        setWaterBackground(mapCanvas);
 
-        gc.fillRect(0, 0, mapCanvas.getWidth(), mapCanvas.getHeight());
         gc.setTransform(trans);
         double pw = 1 / Math.sqrt(Math.abs(trans.determinant()));
         this.setPixelwidth(pw);
@@ -65,59 +63,11 @@ public class MapRenderer {
         updateSearchRange(mapCanvas);
 
         if (mapState.getModel() != null) {
-            for (Type type : mapState.getTypesToBeDrawn()) {
-                if (type != Type.UNKNOWN) {
-                    if (useDependentDraw) {
-                        if (type.getMinMxx() < trans.getMxx() && trans.getMxx() < type.getMaxMxx()) {
-                            paintDrawablesOfType(type, useRegularColors, mapState.getModel());
-                        }
-                    } else {
-                        paintDrawablesOfType(type, useRegularColors, mapState.getModel());
-                    }
-                }
-            }
-
-            var routeModel = mapState.getRouteModel();
-            if (routeModel != null && routeModel.hasRoute()) {
-                gc.setStroke(Color.valueOf("#69c7ff"));
-                gc.setLineWidth(this.pixelwidth*3);
-                var route = routeModel.getDrawableRoute();
-                if (route != null) {
-                    LinePath drawableRoute = new LinePath(route);
-                    drawableRoute.draw(gc, this.pixelwidth, smartTrace);
-                }
-                for (Instruction instruction : routeModel.getInstructions()) {
-                    instruction.getIndicator().draw(gc, this.pixelwidth);
-                }
-            }
-
-            if (drawBound) {
-                drawModelBound(mapState.getModel().getBound(), Color.BLACK, this.pixelwidth);
-            }
-
-            if (mapCanvas.getCurrentRouteOrigin() != null) mapCanvas.getCurrentRouteOrigin() .draw(gc, this.pixelwidth);
-            if (mapCanvas.getCurrentRouteDestination() != null) mapCanvas.getCurrentRouteDestination().draw(gc, this.pixelwidth);
-            if (mapCanvas.getCurrentPin() != null) mapCanvas.getCurrentPin().draw(gc, this.pixelwidth);
-
-            if (showCities) {
-                gc.setStroke(Color.WHITE);
-                gc.setLineWidth(this.pixelwidth*2);
-
-                if (useRegularColors) {
-                    gc.setFill(Color.valueOf("#555555"));
-                    gc.setStroke(Color.WHITE);
-                } else {
-                    gc.setFill(Color.WHITE);
-                    gc.setStroke(Color.valueOf("#555555"));
-                }
-
-                gc.setTextAlign(TextAlignment.CENTER);
-                for (CanvasElement element : mapState.getModel().getCitiesKdTree().rangeSearch(renderRange)) {
-                    if (element instanceof Drawable drawable) {
-                        drawable.draw(gc, this.pixelwidth, smartTrace);
-                    }
-                }
-            }
+            drawTypes(mapState);
+            drawRouteModel(mapState);
+            drawModelBoundIfRequired(mapState);
+            drawPinAndRoute(mapCanvas);
+            drawCitiesIfRequired(mapState);
         }
 
         scaleBar.updateScaleBar(mapCanvas);
@@ -125,22 +75,108 @@ public class MapRenderer {
         scaleBar.draw(gc, this.pixelwidth, false);
         gc.setStroke(Color.BLACK);
 
+        drawDragSquare();
+        drawRoadNodes(mapCanvas);
+
         if (!mapState.getRenderFullScreen()) {
             drawRange(renderRange, this.pixelwidth);
         }
+    }
 
+    private void setWaterBackground(MapCanvasInterface mapCanvas) {
         if (useRegularColors) {
-            gc.setStroke(Color.BLACK);
+            gc.setFill(Type.WATER.getColor());
         } else {
-            gc.setStroke(Color.WHITE);
+            gc.setFill(Type.WATER.getAlternateColor());
         }
+        gc.fillRect(0, 0, mapCanvas.getWidth(), mapCanvas.getHeight());
+    }
+
+    private void drawTypes(MapState mapState) {
+        for (Type type : mapState.getTypesToBeDrawn()) {
+            if (type != Type.UNKNOWN) {
+                if (useDependentDraw) {
+                    if (type.getMinMxx() < trans.getMxx() && trans.getMxx() < type.getMaxMxx()) {
+                        paintDrawablesOfType(type, useRegularColors, mapState.getModel());
+                    }
+                } else {
+                    paintDrawablesOfType(type, useRegularColors, mapState.getModel());
+                }
+            }
+        }
+    }
+
+    private void drawRouteModel(MapState mapState) {
+        var routeModel = mapState.getRouteModel();
+        if (routeModel != null && routeModel.hasRoute()) {
+            gc.setStroke(Color.valueOf("#69c7ff"));
+            gc.setLineWidth(this.pixelwidth * 3);
+            var route = routeModel.getDrawableRoute();
+            if (route != null) {
+                LinePath drawableRoute = new LinePath(route);
+                drawableRoute.draw(gc, this.pixelwidth, smartTrace);
+            }
+            for (Instruction instruction : routeModel.getInstructions()) {
+                instruction.getIndicator().draw(gc, this.pixelwidth);
+            }
+        }
+    }
+
+    private void drawModelBoundIfRequired(MapState mapState) {
+        if (drawBound) {
+            drawModelBound(mapState.getModel().getBound(), Color.BLACK, this.pixelwidth);
+        }
+    }
+
+    private void drawPinAndRoute(MapCanvasInterface mapCanvas) {
+        if (mapCanvas.getMapRouteManager().getCurrentRouteOrigin() != null) {
+            mapCanvas.getMapRouteManager().getCurrentRouteOrigin().draw(gc, this.pixelwidth);
+        }
+        if (mapCanvas.getMapRouteManager().getCurrentRouteDestination() != null) {
+            mapCanvas.getMapRouteManager().getCurrentRouteDestination().draw(gc, this.pixelwidth);
+        }
+        if (mapCanvas.getMapPinManager().getCurrentPin() != null) {
+            mapCanvas.getMapPinManager().getCurrentPin().draw(gc, this.pixelwidth);
+        }
+    }
+
+    private void drawCitiesIfRequired(MapState mapState) {
+        if (showCities) {
+            gc.setStroke(Color.WHITE);
+            gc.setLineWidth(this.pixelwidth * 2);
+
+            setCityDrawingColors();
+
+            gc.setTextAlign(TextAlignment.CENTER);
+            for (CanvasElement element : mapState.getModel().getCitiesKdTree().rangeSearch(renderRange)) {
+                if (element instanceof Drawable drawable) {
+                    drawable.draw(gc, this.pixelwidth, smartTrace);
+                }
+
+            }
+        }
+    }
+
+    private void setCityDrawingColors() {
+        if (useRegularColors) {
+            gc.setFill(Color.valueOf("#555555"));
+            gc.setStroke(Color.WHITE);
+        } else {
+            gc.setFill(Color.WHITE);
+            gc.setStroke(Color.valueOf("#555555"));
+        }
+    }
+
+    private void drawDragSquare() {
         if (draggedSquare != null) {
             draggedSquare.draw(gc, this.pixelwidth, false);
         }
+    }
 
-        if (mapState.getShowRoadNodes()) {
-            drawNode(mapCanvas.getStartNode());
-            drawNode(mapCanvas.getDestinationNode());
+    private void drawRoadNodes(MapCanvasInterface mapCanvas) {
+        if (mapCanvas.getMapState().getShowRoadNodes()) {
+            drawNode(mapCanvas.getMapRouteManager().getStartNode());
+            drawNode(mapCanvas.getMapRouteManager().getDestinationNode());
         }
     }
 
@@ -159,8 +195,8 @@ public class MapRenderer {
                     gc.fill();
                 }
 
-                if(drawBoundingBox) {
-                    drawRange(element.getBoundingBox(), this.pixelwidth/2);
+                if (drawBoundingBox) {
+                    drawRange(element.getBoundingBox(), this.pixelwidth / 2);
                 }
             }
         }
@@ -189,7 +225,7 @@ public class MapRenderer {
         float maxY = range.getMaxY();
         gc.setStroke(Color.BLUE);
         gc.setLineWidth(lineWidth);
-        gc.strokeRect(minX, minY, maxX-minX, maxY-minY);
+        gc.strokeRect(minX, minY, maxX - minX, maxY - minY);
         gc.stroke();
     }
 
@@ -204,25 +240,24 @@ public class MapRenderer {
         }
     }
 
-    public void updateSearchRange(MapCanvas mapCanvas) {
+    public void updateSearchRange(MapCanvasInterface mapCanvas) {
         float w = (float) mapCanvas.getWidth();
         float h = (float) mapCanvas.getHeight();
-        if(mapCanvas.getMapState().getRenderFullScreen()){
+        if (mapCanvas.getMapState().getRenderFullScreen()) {
             renderRange = new Range(
-                    (float) ((-trans.getTx())* this.pixelwidth),
-                    (float) ((-trans.getTy())* this.pixelwidth),
-                    (float) ((-trans.getTx() + w)* this.pixelwidth),
-                    (float) ((-trans.getTy() + h)* this.pixelwidth)
+                    (float) ((-trans.getTx()) * this.pixelwidth),
+                    (float) ((-trans.getTy()) * this.pixelwidth),
+                    (float) ((-trans.getTx() + w) * this.pixelwidth),
+                    (float) ((-trans.getTy() + h) * this.pixelwidth)
             );
         } else {
             renderRange = new Range(
-                    (float) ((-trans.getTx() + w/2-100)* this.pixelwidth),
-                    (float) ((-trans.getTy() + h/2-100)* this.pixelwidth),
-                    (float) ((-trans.getTx() + w/2+100)* this.pixelwidth),
-                    (float) ((-trans.getTy() + h/2+100)* this.pixelwidth)
+                    (float) ((-trans.getTx() + w / 2 - 100) * this.pixelwidth),
+                    (float) ((-trans.getTy() + h / 2 - 100) * this.pixelwidth),
+                    (float) ((-trans.getTx() + w / 2 + 100) * this.pixelwidth),
+                    (float) ((-trans.getTy() + h / 2 + 100) * this.pixelwidth)
             );
         }
-
     }
 
     public void showDijkstraTree(Dijkstra dijkstra) {
@@ -233,22 +268,21 @@ public class MapRenderer {
         }
     }
 
-    public void drawStreetName(String text, MapCanvas mapCanvas) {
+    public void drawStreetName(String text, MapCanvasInterface mapCanvas) {
         gc.setFill(Color.BLACK);
         gc.setStroke(Color.BLACK);
         gc.setTextAlign(TextAlignment.LEFT);
         gc.setLineWidth(1 * this.pixelwidth);
         Point2D placement = this.getModelCoordinates(50, mapCanvas.getHeight() - 50 + 13);
         gc.strokeText(text, placement.getX(), placement.getY());
-        gc.fillText(text, placement.getX(),  placement.getY());
+        gc.fillText(text, placement.getX(), placement.getY());
     }
 
-
-    public void resetView(Model model, MapCanvas mapCanvas){
+    public void resetView(Model model, MapCanvasInterface mapCanvas) {
         trans.setToIdentity();
         Bound b = model.getBound();
         pan(-(b.getMaxLon() + b.getMinLon()) / 2, -(b.getMaxLat() + b.getMinLat()) / 2, mapCanvas);
-        pan(mapCanvas.getWidth() / 2, mapCanvas.getHeight() / 2,  mapCanvas);
+        pan(mapCanvas.getWidth() / 2, mapCanvas.getHeight() / 2, mapCanvas);
 
         float boundHeight = b.getMaxLat() - b.getMinLat();
         float boundWidth = b.getMaxLon() - b.getMinLon();
@@ -265,12 +299,12 @@ public class MapRenderer {
         zoom(factor, mapCanvas.getWidth() / 2, mapCanvas.getHeight() / 2, mapCanvas);
     }
 
-    public void pan(double dx, double dy, MapCanvas mapCanvas) {
+    public void pan(double dx, double dy, MapCanvasInterface mapCanvas) {
         trans.prependTranslation(dx, dy);
         repaint(mapCanvas);
     }
 
-    public void zoom(double factor, double x, double y, MapCanvas mapCanvas) {
+    public void zoom(double factor, double x, double y, MapCanvasInterface mapCanvas) {
         if (shouldZoom(factor)) {
             trans.prependScale(factor, factor, x, y);
             repaint(mapCanvas);
@@ -301,39 +335,35 @@ public class MapRenderer {
         this.drawBound = drawBound;
     }
 
-    public void setDraggedSquare(LinePath linePath, MapCanvas mapCanvas) {
+    public void setDraggedSquare(LinePath linePath, MapCanvasInterface mapCanvas) {
         draggedSquare = linePath;
         repaint(mapCanvas);
     }
 
-
-    public boolean getDrawBound(){
+    public boolean getDrawBound() {
         return drawBound;
     }
 
-    public void setUseDependentDraw(boolean shouldUseDependentDraw, MapCanvas mapCanvas) {
+    public void setUseDependentDraw(boolean shouldUseDependentDraw, MapCanvasInterface mapCanvas) {
         useDependentDraw = shouldUseDependentDraw;
         repaint(mapCanvas);
     }
 
-    public void setShowCities(boolean showCities, MapCanvas mapCanvas) {
+    public void setShowCities(boolean showCities, MapCanvasInterface mapCanvas) {
         this.showCities = showCities;
         repaint(mapCanvas);
     }
 
-    public void setTraceType(boolean shouldSmartTrace, MapCanvas mapCanvas) {
+    public void setTraceType(boolean shouldSmartTrace, MapCanvasInterface mapCanvas) {
         smartTrace = shouldSmartTrace;
         repaint(mapCanvas);
     }
-
-
-
 
     public Affine getTrans() {
         return trans;
     }
 
-    public void setUseRegularColors(boolean shouldUseRegularColors, MapCanvas mapCanvas) {
+    public void setUseRegularColors(boolean shouldUseRegularColors, MapCanvasInterface mapCanvas) {
         useRegularColors = shouldUseRegularColors;
         repaint(mapCanvas);
     }
@@ -346,20 +376,23 @@ public class MapRenderer {
         }
     }
 
-    public void zoomToNode (Node node, MapCanvas mapCanvas){
+    public void zoomToNode(Node node, MapCanvasInterface mapCanvas) {
         zoomToPoint(1, node.getLon(), node.getLat(), mapCanvas);
     }
 
-    public void zoomToPoint (double factor, float lon, float lat, MapCanvas mapCanvas){
+    public void zoomToPoint(double factor, float lon, float lat, MapCanvasInterface mapCanvas) {
         trans.setToIdentity();
         pan(-lon, -lat, mapCanvas);
         zoom(factor, 0, 0, mapCanvas);
-        pan(mapCanvas.getWidth() / 2, mapCanvas.getHeight() / 2,  mapCanvas);
+        pan(mapCanvas.getWidth() / 2, mapCanvas.getHeight() / 2, mapCanvas);
         repaint(mapCanvas);
     }
 
+    public LinePath getDraggedSquare() {
+        return this.draggedSquare;
+    }
 
-
-
-
+    public boolean getShowCities() {
+        return this.showCities;
+    }
 }

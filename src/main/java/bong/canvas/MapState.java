@@ -36,9 +36,9 @@ public class MapState {
         return renderFullScreen;
     }
 
-    public void setTypesToBeDrawn(List<Type> typesToBeDrawn) {
+    public void setTypesToBeDrawn(List<Type> typesToBeDrawn, MapCanvasInterface mapCanvas) {
         this.typesToBeDrawn = typesToBeDrawn;
-//        repaint();
+        mapCanvas.getMapRenderer().repaint(mapCanvas);
     }
 
     public List<Type> getTypesToBeDrawn() {
@@ -49,9 +49,9 @@ public class MapState {
         this.showRoadNodes = showRoadNodes;
     }
 
-    public void setModel(Model model) {
+    public void setModel(Model model, MapCanvasInterface mapCanvas) {
         this.model = model;
-//        resetView();
+        mapCanvas.getMapRenderer().resetView(this.model, mapCanvas);
     }
 
     public void setRouteModel(RouteModel routeModel) {

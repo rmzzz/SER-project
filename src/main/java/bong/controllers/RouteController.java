@@ -77,7 +77,7 @@ public class RouteController {
         lastActionInstruction = null;
         if (routeModel.hasRoute()) {
             routeModel.clear();
-            canvas.repaint();
+            canvas.getMapRenderer().repaint(canvas);
         }
     }
 
@@ -290,7 +290,7 @@ public class RouteController {
 
         routeModel.setDrawableRoute(floats);
         canvas.getMapState().setRouteModel(routeModel);
-        canvas.repaint();
+        canvas.getMapRenderer().repaint(canvas);
     }
 
     public void setDijkstra(long startPoint, long endPoint, String vehicle, boolean shortestRoute, boolean useBidirectional, boolean useAStar) throws Exception{
@@ -298,7 +298,7 @@ public class RouteController {
         setRoute(useBidirectional);
         generateRouteInfo(route, vehicle, model.getGraph());
         canvas.getMapState().setRouteModel(routeModel);
-        canvas.repaint();
+        canvas.getMapRenderer().repaint(canvas);
     }
 
     public double getRouteTime() {

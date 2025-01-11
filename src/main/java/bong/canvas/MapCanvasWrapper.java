@@ -12,12 +12,12 @@ public class MapCanvasWrapper extends Pane {
 
         heightProperty().addListener((obs, oldVal, newVal) -> {
             mapCanvas.setHeight((double) newVal);
-            mapCanvas.repaint();
+            mapCanvas.getMapRenderer().repaint(mapCanvas);
         });
 
         widthProperty().addListener((obs, oldVal, newVal) -> {
             mapCanvas.setWidth((double) newVal);
-            mapCanvas.repaint();
+            mapCanvas.getMapRenderer().repaint(mapCanvas);
         });
 
     }
