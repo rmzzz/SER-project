@@ -5,7 +5,7 @@ import bong.util.ResourceLoader;
 import java.io.InputStream;
 import java.net.URL;
 
-class AppResourceLoader implements ResourceLoader {
+public class AppResourceLoader implements ResourceLoader {
     @Override
     public URL getResource(String fileName) {
         return App.class.getResource(fileName);

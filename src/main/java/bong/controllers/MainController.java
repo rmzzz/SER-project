@@ -50,9 +50,9 @@ public class MainController {
     private Point2D destinationPoint;
     private Point2D startPoint;
     private Point2D currentPoint;
-    private PointsOfInterestController poiController;
-    private SearchController searchController;
-    private RouteController routeController;
+    PointsOfInterestController poiController;
+    SearchController searchController;
+    RouteController routeController;
 
     private ToggleGroup vehicleGroup = new ToggleGroup();
     @FXML private RadioButton carButton;
@@ -95,7 +95,7 @@ public class MainController {
     @FXML private Button welcomeCustom;
 
     @FXML private StackPane stackPane;
-    @FXML private MapCanvasWrapper mapCanvasWrapper;
+    @FXML MapCanvasWrapper mapCanvasWrapper;
     @FXML private MenuBar menu;
     @FXML private MenuItem loadClick;
     @FXML private MenuItem loadDefaultMap;
