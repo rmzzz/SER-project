@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MainController {
     private Stage stage;
     private ResourceLoader resourceLoader;
-    public Model model;
+    private Model model;
     private Point2D lastMouse;
     private ArrayList<Address> tempBest = new ArrayList<>();
     private boolean hasBeenDragged = false;
@@ -162,7 +162,7 @@ public class MainController {
             hasBeenDragged = true;
 
             if (shouldPan) {
-                canvas.pan(e.getX() - lastMouse.getX(), e.getY() - lastMouse.getY());
+                canvas.getMapRenderer().pan(e.getX() - lastMouse.getX(), e.getY() - lastMouse.getY(), canvas);
                 lastMouse = new Point2D(e.getX(), e.getY());
             } else {
                 setLinePathForDrawedSquare(e);
@@ -180,7 +180,7 @@ public class MainController {
 
             shouldPan = true;
             hasBeenDragged = false;
-            canvas.setDraggedSquare(null);
+            canvas.getMapRenderer().setDraggedSquare(null, canvas);
         });
 
         loadDefaultMap.setOnAction(e -> {
@@ -212,7 +212,7 @@ public class MainController {
 
         canvas.setOnScroll(e -> {
             double factor = Math.pow(1.004,e.getDeltaY());
-            canvas.zoom(factor,e.getX(),e.getY());
+            canvas.getMapRenderer().zoom(factor,e.getX(),e.getY(), canvas);
         });
 
         devtools.setOnAction(e -> {
@@ -230,7 +230,7 @@ public class MainController {
 
         darkMode.setSelected(false);
         darkMode.setOnAction(e -> {
-            canvas.setUseRegularColors(!darkMode.isSelected());
+            canvas.getMapRenderer().setUseRegularColors(!darkMode.isSelected(), canvas);
         });
 
         hoverToShowStreet.setSelected(showStreetOnHover);
@@ -309,7 +309,7 @@ public class MainController {
         searchField.textProperty().addListener((obs,oldVal,newVal) -> {
             hidePinInfo();
             if (searchField.isFocused()) setCurrentQuery(searchField.getText().trim());
-            if (searchField.getText().length() == 0) suggestionsContainer.getChildren().clear();
+            if (searchField.getText().isEmpty()) suggestionsContainer.getChildren().clear();
             canvas.nullPin();
         });
 
@@ -318,16 +318,16 @@ public class MainController {
                 event.consume();
             }
             if (event.getCode() == KeyCode.DOWN) {
-                if(suggestionsContainer.getChildren().size() > 0) {
-                    suggestionsContainer.getChildren().get(0).requestFocus();
+                if(!suggestionsContainer.getChildren().isEmpty()) {
+                    suggestionsContainer.getChildren().getFirst().requestFocus();
                 }
                 event.consume();
             }
         });
 
         searchField.setOnAction(e -> {
-            if(suggestionsContainer.getChildren().size() > 0) {
-                SuggestionButton b = (SuggestionButton) suggestionsContainer.getChildren().get(0);
+            if(!suggestionsContainer.getChildren().isEmpty()) {
+                SuggestionButton b = (SuggestionButton) suggestionsContainer.getChildren().getFirst();
                 Address a = b.getAddress();
                 goToAddress(a);
             }
@@ -395,7 +395,7 @@ public class MainController {
         setCurrentQuery(a.toString());
         searchField.setText(a.toString());
         searchField.positionCaret(searchField.getText().length());
-        canvas.zoomToPoint(1, a.getLon(),  a.getLat());
+        canvas.getMapRenderer().zoomToPoint(1, a.getLon(),  a.getLat(), canvas);
         canvas.setPin(a.getLon(), a.getLat());
         suggestionsContainer.getChildren().clear();
         showPinMenu();
@@ -403,7 +403,7 @@ public class MainController {
 
     private void peekAddress(Address a) {
         searchField.setText(a.toString());
-        canvas.zoomToPoint(1, a.getLon(),  a.getLat());
+        canvas.getMapRenderer().zoomToPoint(1, a.getLon(),  a.getLat(), canvas);
         canvas.setPin(a.getLon(), a.getLat());
         showPinMenu();
     }
@@ -511,7 +511,7 @@ public class MainController {
 
     private void placePin() {
         try {
-            Point2D point2D = canvas.getTrans().inverseTransform(lastMouse.getX(), lastMouse.getY());
+            Point2D point2D = canvas.getMapRenderer().getTrans().inverseTransform(lastMouse.getX(), lastMouse.getY());
             canvas.setPin((float) point2D.getX(), (float) point2D.getY());
             showPinMenu();
         } catch (NonInvertibleTransformException ex) {
@@ -521,10 +521,10 @@ public class MainController {
 
     private void setLinePathForDrawedSquare(MouseEvent e) {
         try {
-            Point2D corner0 = canvas.getTrans().inverseTransform(lastMouse.getX(), lastMouse.getY());
-            Point2D corner1 = canvas.getTrans().inverseTransform(lastMouse.getX(), e.getY());
-            Point2D corner2 = canvas.getTrans().inverseTransform(e.getX(), e.getY());
-            Point2D corner3 = canvas.getTrans().inverseTransform(e.getX(), lastMouse.getY());
+            Point2D corner0 = canvas.getMapRenderer().getTrans().inverseTransform(lastMouse.getX(), lastMouse.getY());
+            Point2D corner1 = canvas.getMapRenderer().getTrans().inverseTransform(lastMouse.getX(), e.getY());
+            Point2D corner2 = canvas.getMapRenderer().getTrans().inverseTransform(e.getX(), e.getY());
+            Point2D corner3 = canvas.getMapRenderer().getTrans().inverseTransform(e.getX(), lastMouse.getY());
 
             float[] floats = {
                     (float) corner0.getX(), (float) corner0.getY(),
@@ -534,7 +534,7 @@ public class MainController {
                     (float) corner0.getX(), (float) corner0.getY(),
             };
             LinePath linePath = new LinePath(floats);
-            canvas.setDraggedSquare(linePath);
+            canvas.getMapRenderer().setDraggedSquare(linePath, canvas);
         } catch (NonInvertibleTransformException ex) {
             ex.printStackTrace();
         }
@@ -558,14 +558,14 @@ public class MainController {
             }
         }
 
-        canvas.setTypesToBeDrawn(typesToBeDrawn);
+        canvas.getMapState().setTypesToBeDrawn(typesToBeDrawn);
     }
 
     private void addItemToMyPoints(PointOfInterest poi) {
         MenuItem item = new MenuItem(poi.getName());
         item.setOnAction(a -> {
             canvas.setPin(poi.getLon(), poi.getLat());
-            canvas.zoomToPoint(1, poi.getLon(), poi.getLat());
+            canvas.getMapRenderer().zoomToPoint(1, poi.getLon(), poi.getLat(), canvas);
             showPinMenu();
         });
         myPoints.getItems().add(item);
@@ -575,8 +575,8 @@ public class MainController {
         Point2D inversedStart = null;
         Point2D inversedEnd = null;
         try {
-            inversedStart = canvas.getTrans().inverseTransform(lastMouse.getX(), lastMouse.getY());
-            inversedEnd = canvas.getTrans().inverseTransform(end.getX(), end.getY());
+            inversedStart = canvas.getMapRenderer().getTrans().inverseTransform(lastMouse.getX(), lastMouse.getY());
+            inversedEnd = canvas.getMapRenderer().getTrans().inverseTransform(end.getX(), end.getY());
         } catch (NonInvertibleTransformException e) {
             AlertController.showError("Unexpected error", "Could not zoom to area", e);
         }
@@ -587,16 +587,14 @@ public class MainController {
         double factor;
 
         if (windowAspectRatio < markedAspectRatio) {
-            factor = Math.abs((canvas.getWidth() / (end.getX() -  lastMouse.getX())) * canvas.getTrans().getMxx());
+            factor = Math.abs((canvas.getWidth() / (end.getX() -  lastMouse.getX())) * canvas.getMapRenderer().getTrans().getMxx());
         } else {
-            factor = Math.abs((canvas.getHeight() / (end.getY() -  lastMouse.getY()) * canvas.getTrans().getMxx()));
+            factor = Math.abs((canvas.getHeight() / (end.getY() -  lastMouse.getY()) * canvas.getMapRenderer().getTrans().getMxx()));
         }
         if (factor > 2.2) {
             factor = 2.2;
         }
-        canvas.zoomToPoint(factor, (float) centerPoint.getX(), (float) centerPoint.getY());
-
-
+        canvas.getMapRenderer().zoomToPoint(factor, (float) centerPoint.getX(), (float) centerPoint.getY(), canvas);
     }
 
     public void setPOIButton() {
@@ -617,7 +615,7 @@ public class MainController {
 
         POIButton.setOnAction(e -> {
             if (!POIExists.get()) {
-                poiController.showAddPointDialog(currentPoint);
+                showAddPointDialog(currentPoint);
                 myPoints.getItems().clear();
                 poiController.loadPointsOfInterest();
                 for (PointOfInterest poi : PointsOfInterestController.getPointsOfInterest()) {
@@ -637,6 +635,16 @@ public class MainController {
                 setPOIButton();
             }
         });
+    }
+
+    public void showAddPointDialog(Point2D point) {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Point of interest");
+        dialog.setContentText("Save point of interest");
+        dialog.setHeaderText("Enter the name of the point");
+        dialog.setContentText("Name:");
+        Optional<String> givenName = dialog.showAndWait();
+        poiController.addPointOfInterest(point, givenName);
     }
 
     public void showPinMenu() {
@@ -679,11 +687,7 @@ public class MainController {
 
         setStartOrDestinationLabel(destinationAddress, destinationPoint, destinationLabel);
 
-        if (startAddress == null || destinationAddress == null) {
-            findRoute.setDisable(true);
-        } else {
-            findRoute.setDisable(false);
-        }
+        findRoute.setDisable(startAddress == null || destinationAddress == null);
 
         List<Instruction> instructions = routeController.getInstructions();
         if (!instructions.isEmpty()) {
@@ -692,7 +696,7 @@ public class MainController {
                 Button button = new Button(instruction.getInstruction());
                 button.getStyleClass().add("instruction");
                 button.setOnAction(e -> {
-                    canvas.zoomToNode(instruction.getNode());
+                    canvas.getMapRenderer().zoomToNode(instruction.getNode(), canvas);
                 });
                 directions.getChildren().add(button);
             }
@@ -787,16 +791,14 @@ public class MainController {
                 setModelFromBinary(is);
                 break;
             case ".osm":
-                canvas.setTypesToBeDrawn(new ArrayList<>());
+                canvas.getMapState().setTypesToBeDrawn(new ArrayList<>());
 
                 OSMReader reader = new OSMReader(is);
-                this.model = new Model(reader);
+                setModel(new Model(reader));
                 reader.destroy();
-                reader = null;
-                mapCanvasWrapper.mapCanvas.setModel(model);
 
                 ArrayList<Type> list = new ArrayList<>(Arrays.asList(Type.getTypes()));
-                canvas.setTypesToBeDrawn(list);
+                canvas.getMapState().setTypesToBeDrawn(list);
                 break;
             case ".zip":
                 loadFile(FileController.loadZip(file));
@@ -809,8 +811,13 @@ public class MainController {
     }
 
     private void setModelFromBinary(InputStream is) throws IOException, ClassNotFoundException {
-        this.model = (Model) FileController.loadBinary(is);
+        setModel((Model) FileController.loadBinary(is));
+    }
+
+    private void setModel(Model model) {
+        this.model = model;
         mapCanvasWrapper.mapCanvas.setModel(model);
+        routeController.setModel(model);
     }
 
     private void swapStartAndDestination() {

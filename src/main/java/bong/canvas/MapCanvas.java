@@ -6,48 +6,20 @@ import bong.routeFinding.*;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
-import javafx.scene.shape.FillRule;
-import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
-import javafx.scene.transform.NonInvertibleTransformException;
 import java.util.*;
 
 public class MapCanvas extends Canvas {
-    private Drawer gc;
-    private Affine trans;
-    private Model model;
-    private RouteModel routeModel;
+    MapRenderer mapRenderer;
+    MapState mapState;
 
-    private ScaleBar scaleBar;
-    private boolean smartTrace = true;
-    private boolean useRegularColors = true;
-    private boolean renderFullScreen = true;
-    private LinePath draggedSquare;
     private Node startNode;
     private Node destinationNode;
-    private boolean showRoadNodes = false;
-
     private Pin currentPin;
     private RouteOriginIndicator currentRouteOrigin;
     private RouteDestinationIndicator currentRouteDestination;
 
-    private boolean showCities = true;
-    private boolean useDependentDraw = true;
     private boolean showStreetNodeCloseToMouse = false;
-    private boolean drawBound = false;
-
-    private List<Type> typesToBeDrawn = Arrays.asList(Type.getTypes());
-    
-    public static boolean drawBoundingBox;
-
-    private Range renderRange;
-    private double pixelWidth;
-
-    public Affine getTrans() {
-        return trans;
-    }
 
     public RouteDestinationIndicator getCurrentRouteDestination() {
         return currentRouteDestination;
@@ -65,25 +37,6 @@ public class MapCanvas extends Canvas {
         currentRouteOrigin = new RouteOriginIndicator(1,1,1);
     }
 
-    public Range getRenderRange() {
-        return renderRange;
-    }
-
-    public ScaleBar getScaleBar() {
-        return scaleBar;
-    }
-
-    public Model getModel() {
-        return model;
-    }
-
-    public boolean isShowRoadNodes() {
-        return showRoadNodes;
-    }
-
-    public void setShowRoadNodes(boolean showRoadNodes) {
-        this.showRoadNodes = showRoadNodes;
-    }
 
     public void clearOriginDestination() {
         currentRouteOrigin = null;
@@ -100,325 +53,25 @@ public class MapCanvas extends Canvas {
     }
 
     public MapCanvas() {
-        this.gc = new Drawer(getGraphicsContext2D());
-        this.trans = new Affine();
-        this.scaleBar = new ScaleBar();
+        Drawer drawer = new Drawer(getGraphicsContext2D());
+        Affine affine = new Affine();
+        this.mapRenderer = new MapRenderer(drawer, affine);
+        this.mapState = new MapState(null, Arrays.asList(Type.getTypes()), false, true );
     }
 
     public void repaint() {
-        gc.setTransform(new Affine());
-        if (useRegularColors) {
-            gc.setFill(Type.WATER.getColor());
-        } else {
-            gc.setFill(Type.WATER.getAlternateColor());
-        }
-        gc.fillRect(0, 0, getWidth(), getHeight());
-        gc.setTransform(trans);
-        double pixelwidth = 1 / Math.sqrt(Math.abs(trans.determinant()));
-        this.pixelWidth = pixelwidth;
-        gc.setFillRule(FillRule.EVEN_ODD);
-
-        updateSearchRange(pixelwidth);
-
-        if (model != null) {
-            for (Type type : typesToBeDrawn) {
-                if (type != Type.UNKNOWN) {
-                    if (useDependentDraw) {
-                        if (type.getMinMxx() < trans.getMxx() && trans.getMxx() < type.getMaxMxx()) {
-                            paintDrawablesOfType(type, pixelwidth, useRegularColors);
-                        }
-                    } else {
-                        paintDrawablesOfType(type, pixelwidth, useRegularColors);
-                    }
-                }
-            }
-
-            if (routeModel.hasRoute()) {
-                gc.setStroke(Color.valueOf("#69c7ff"));
-                gc.setLineWidth(pixelwidth*3);
-                float[] drawableRoute = routeModel.getDrawableRoute();
-                if (drawableRoute != null) {
-                    LinePath linePath = new LinePath(drawableRoute);
-                    linePath.draw(gc, pixelwidth, smartTrace);
-                }
-                if (routeModel.getInstructions() != null){
-                    for(Instruction instruction : routeModel.getInstructions()) {
-                        instruction.getIndicator().draw(gc, pixelwidth);
-                    }
-                }
-            }
-
-            if(drawBound) {
-                drawModelBound(Color.BLACK, pixelwidth);
-            }
-
-            if (currentRouteOrigin != null) currentRouteOrigin.draw(gc, pixelwidth);
-            if (currentRouteDestination != null) currentRouteDestination.draw(gc, pixelwidth);
-            if (currentPin != null) currentPin.draw(gc, pixelwidth);
-
-            if (showCities) {
-                gc.setStroke(Color.WHITE);
-                gc.setLineWidth(pixelwidth*2);
-                
-                if (useRegularColors) {
-                    gc.setFill(Color.valueOf("#555555"));
-                    gc.setStroke(Color.WHITE);
-                } else {
-                    gc.setFill(Color.WHITE);
-                    gc.setStroke(Color.valueOf("#555555"));
-                }
-
-                gc.setTextAlign(TextAlignment.CENTER);
-                for(CanvasElement element : model.getCitiesKdTree().rangeSearch(renderRange)){
-                    element.draw(gc, pixelwidth, smartTrace);
-                }
-            }
-        }
-
-        scaleBar.updateScaleBar(this);
-        gc.setStroke(useRegularColors ? Color.BLACK : Color.WHITE);
-        scaleBar.draw(gc, pixelwidth, false);
-        gc.setStroke(Color.BLACK);
-
-        if (!renderFullScreen) {
-            drawRange(renderRange, pixelwidth);
-        }
-
-        if (useRegularColors) {
-            gc.setStroke(Color.BLACK);
-        } else {
-            gc.setStroke(Color.WHITE);
-        }
-        if (draggedSquare != null) {
-            draggedSquare.draw(gc, pixelwidth, false);
-        }
-
-        if (showRoadNodes) {
-            drawNode(startNode);
-            drawNode(destinationNode);
-        }
+         this.mapRenderer.repaint(this);
     }
 
-    void drawModelBound(Color color, double scale) {
-        Bound bound = model.getBound();
-        float minLon = bound.getMinLon();
-        float minLat = bound.getMinLat();
-        float maxLon = bound.getMaxLon();
-        float maxLat = bound.getMaxLat();
-        gc.setStroke(color);
-        gc.beginPath();
-        gc.setLineWidth(scale);
-        gc.moveTo(minLon, minLat);
-        gc.lineTo(minLon, maxLat);
-        gc.lineTo(maxLon, maxLat);
-        gc.lineTo(maxLon, minLat);
-        gc.lineTo(minLon, minLat);
-        gc.stroke();
-    }
-
-    void drawRange(Range range, double lineWidth) {
-        float minX = range.getMinX();
-        float minY = range.getMinY();
-        float maxX = range.getMaxX();
-        float maxY = range.getMaxY();
-        gc.setStroke(Color.BLUE);
-        gc.setLineWidth(lineWidth);
-        gc.strokeRect(minX, minY, maxX-minX, maxY-minY);
-        gc.stroke();
-    }
-
-    public void setDraggedSquare(LinePath linePath) {
-        draggedSquare = linePath;
-        repaint();
-    }
-
-    public void updateSearchRange(double pixelwidth) {
-        float w = (float) this.getWidth();
-        float h = (float) this.getHeight();
-        if(renderFullScreen){
-            renderRange = new Range(
-                    (float) ((-trans.getTx())* pixelwidth),
-                    (float) ((-trans.getTy())* pixelwidth),
-                    (float) ((-trans.getTx() + w)* pixelwidth),
-                    (float) ((-trans.getTy() + h)* pixelwidth)
-            );
-        } else {
-            renderRange = new Range(
-                    (float) ((-trans.getTx() + w/2-100)* pixelwidth),
-                    (float) ((-trans.getTy() + h/2-100)* pixelwidth),
-                    (float) ((-trans.getTx() + w/2+100)* pixelwidth),
-                    (float) ((-trans.getTy() + h/2+100)* pixelwidth)
-            );
-        }
-
-    }
-
-    public void setRenderFullScreen(boolean bool){
-        renderFullScreen = bool;
-    }
-
-    public void showDijkstraTree(Dijkstra dijkstra) {
-        if (dijkstra != null) {
-            for (Map.Entry<Long, Edge> entry : dijkstra.getAllEdgeTo().entrySet()) {
-                new LinePath(entry.getValue().getTailNode(), entry.getValue().getHeadNode())
-                        .draw(gc, 1, false);
-            }
-        }
-    }
-
-    public void drawEdge(Edge edge) {
-        Paint prevStroke = gc.getStroke();
-        gc.setStroke(Color.RED);
-        new LinePath(edge.getTailNode(), edge.getHeadNode()).draw(gc, 1, false);
-        gc.setStroke(prevStroke);
-    }
-
-    public void drawNode(Node node) {
-        gc.setStroke(Color.GREEN);
-        gc.setLineWidth(20);
-        new LinePath(node, node).draw(gc, 10, false);
-    }
-
-    public void setTypesToBeDrawn(List<Type> typesToBeDrawn) {
-        this.typesToBeDrawn = typesToBeDrawn;
-        repaint();
-    }
-
-    public void setUseRegularColors(boolean shouldUseRegularColors) {
-        useRegularColors = shouldUseRegularColors;
-        repaint();
-    }
-
-    public void setTraceType(boolean shouldSmartTrace) {
-        smartTrace = shouldSmartTrace;
-        repaint();
-    }
-
-    public void setShowCities(boolean shouldShowCities) {
-        showCities = shouldShowCities;
-        repaint();
-    }
-
-    public void setUseDependentDraw(boolean shouldUseDependentDraw) {
-        useDependentDraw = shouldUseDependentDraw;
-        repaint();
-    }
-
-    public void resetView() {
-        trans.setToIdentity();
-        Bound b = model.getBound();
-        pan(-(b.getMaxLon() + b.getMinLon()) / 2, -(b.getMaxLat() + b.getMinLat()) / 2);
-        pan(getWidth() / 2, getHeight() / 2);
-
-        float boundHeight = b.getMaxLat() - b.getMinLat();
-        float boundWidth = b.getMaxLon() - b.getMinLon();
-        float bound;
-        float canvasScale;
-        if (boundHeight > boundWidth) {
-            bound = boundHeight;
-            canvasScale = (float) getHeight();
-        } else {
-            bound = boundWidth;
-            canvasScale = (float) getWidth();
-        }
-        float factor = canvasScale / bound;
-        zoom(factor, getWidth() / 2, getHeight() / 2);
-    }
-
-    public void pan(double dx, double dy) {
-        trans.prependTranslation(dx, dy);
-        repaint();
-    }
-
-    public void zoom(double factor, double x, double y) {
-        if (shouldZoom(factor)) {
-            trans.prependScale(factor, factor, x, y);
-            repaint();
-        }
-    }
-
-    public boolean shouldZoom(double factor) {
-        if (factor > 1) {
-            if (trans.getMxx() < 2.2) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            if (trans.getMxx() > 0.0005) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
-
-    private void paintDrawablesOfType(Type type, double pixelwidth, boolean useRegularColors) {
-        KDTree kdTree = model.getKDTreeByType(type);
-        gc.setStroke(Color.TRANSPARENT);
-        gc.setFill(Color.TRANSPARENT);
-        if (kdTree != null) {
-            setFillAndStroke(type, pixelwidth, useRegularColors);
-            
-            for(CanvasElement element : kdTree.rangeSearch(renderRange)){
-                element.draw(gc, 1/pixelwidth, smartTrace);
-                if (type.shouldHaveFill()) gc.fill();
-
-                if(drawBoundingBox) {
-                    drawRange(element.getBoundingBox(), pixelwidth/2);
-                }
-            }
-        }
-
-    }
-
-    private void setFillAndStroke(Type type, double pixelwidth, boolean useRegularColors) {
-        gc.setLineWidth(type.getWidth() * pixelwidth);
-        if (useRegularColors) {
-            if (type.shouldHaveFill()) gc.setFill(type.getColor());
-            if (type.shouldHaveStroke()) gc.setStroke(type.getColor());
-        } else {
-            if (type.shouldHaveFill()) gc.setFill(type.getAlternateColor());
-            if (type.shouldHaveStroke()) gc.setStroke(type.getAlternateColor());
-        }
+    public void showDijkstraTree(Dijkstra dijkstra){
+        this.mapRenderer.showDijkstraTree(dijkstra);
     }
 
     public void setModel(Model model) {
-        this.model = model;
-        resetView();
+        this.mapState.setModel(model);
+        this.mapRenderer.resetView(model, this);
     }
 
-    public void setModelWithoutReset(Model model) {
-        this.model = model;
-    }
-
-    public RouteModel getRouteModel() {
-        return routeModel;
-    }
-
-    public void setRouteModel(RouteModel routeModel) {
-        this.routeModel = routeModel;
-    }
-
-    public Point2D getModelCoordinates(double x, double y) {
-        try {
-            return trans.inverseTransform(x, y);
-        } catch (NonInvertibleTransformException e) {
-            return null;
-        }
-    }
-
-    public void zoomToNode (Node node){
-        zoomToPoint(1, node.getLon(), node.getLat());
-    }
-
-    public void zoomToPoint (double factor, float lon, float lat){
-        trans.setToIdentity();
-        pan(-lon, -lat);
-        zoom(factor, 0, 0);
-        pan(getWidth() / 2, getHeight() / 2);
-        repaint();
-    }
 
     public void setPin (float lon, float lat){
         currentPin = new Pin(lon, lat, 1);
@@ -448,17 +101,6 @@ public class MapCanvas extends Canvas {
         repaint();
     }
 
-    public boolean getRenderFullScreen(){
-        return renderFullScreen;
-    }
-
-    public void setDrawBound(boolean drawBound){
-        this.drawBound = drawBound;
-    }
-
-    public boolean getDrawBound(){
-        return drawBound;
-    }
 
     public void setStartDestPoint(Node start, Node dest) {
         this.startNode = start;
@@ -467,39 +109,39 @@ public class MapCanvas extends Canvas {
 
 	public void showStreetNearMouse(Model model, MouseEvent e) {
 	    try {
-	        Point2D translatedCoords = getTrans().inverseTransform(e.getX(), e.getY());
-	        Node nearestNode = (Node) model.getRoadKDTree().nearestNeighborForEdges(translatedCoords, "Walk");
+	        Point2D translatedCoords = this.mapRenderer.getTrans().inverseTransform(e.getX(), e.getY());
+	        Node nearestNode = model.getRoadKDTree().nearestNeighborForEdges(translatedCoords, "Walk");
 	        long nodeAsLong = nearestNode.getAsLong();
-	        Edge streetEdge = model.getGraph().getAdj().get(nodeAsLong).get(0);
+	        Edge streetEdge = model.getGraph().getAdj().get(nodeAsLong).getFirst();
 	        double bestAngle = Double.POSITIVE_INFINITY;
-	
-	
+
+
 	        Point2D mouseRelativeToNodeVector = new Point2D(translatedCoords.getX() - nearestNode.getLon(), translatedCoords.getY() - nearestNode.getLat());
-	
+
 	        for (Edge edge : model.getGraph().getAdj().get(nearestNode.getAsLong())) {
 	            Node otherNode = edge.otherNode(nodeAsLong);
 	            Point2D otherNodeRelativeToNodeVector = new Point2D(otherNode.getLon() - nearestNode.getLon(), otherNode.getLat() - nearestNode.getLat());
-	
+
 	            double angle = Math.acos((mouseRelativeToNodeVector.getX() * otherNodeRelativeToNodeVector.getX() + mouseRelativeToNodeVector.getY() * otherNodeRelativeToNodeVector.getY()) / (mouseRelativeToNodeVector.magnitude() * otherNodeRelativeToNodeVector.magnitude()));
-	
+
 	            if (angle < bestAngle) {
 	                bestAngle = angle;
 	                streetEdge = edge;
 	            }
 	        }
-	
+
 	        String streetName = streetEdge.getStreet().getName();
 	        if (streetName == null) {
                 streetName = "Unnamed street";
             }
             repaint();
-            drawEdge(streetEdge);
-	
+            this.mapRenderer.drawEdge(streetEdge);
+
 	        if (getShowStreetNodeCloseToMouse()) {
-	            drawNode(nearestNode);
+                this.mapRenderer.drawNode(nearestNode);
 	        }
-	
-	        drawStreetName(streetName);
+
+	        this.mapRenderer.drawStreetName(streetName, this);
 	    } catch (Exception ex) {
 	        ex.printStackTrace();
 	    }
@@ -509,18 +151,20 @@ public class MapCanvas extends Canvas {
         showStreetNodeCloseToMouse = newValue;
     }
 
-    public void drawStreetName(String text) {
-        gc.setFill(Color.BLACK);
-        gc.setStroke(Color.BLACK);
-        gc.setTextAlign(TextAlignment.LEFT);
-        gc.setLineWidth(1 * getPixelWidth());
-        Point2D placement = getModelCoordinates(50, getHeight() - 50 + 13);
-        gc.strokeText(text, placement.getX(), placement.getY());
-        gc.fillText(text, placement.getX(),  placement.getY());
+    public MapRenderer getMapRenderer() {
+        return mapRenderer;
     }
 
-    private double getPixelWidth() {
-        return this.pixelWidth;
+    public MapState getMapState() {
+        return mapState;
+    }
+
+    public Node getStartNode() {
+        return startNode;
+    }
+
+    public Node getDestinationNode() {
+        return destinationNode;
     }
 
 }

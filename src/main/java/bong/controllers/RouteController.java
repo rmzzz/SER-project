@@ -22,7 +22,7 @@ public class RouteController {
         this.model = model;
         this.canvas = canvas;
         routeModel = new RouteModel();
-        canvas.setRouteModel(routeModel);
+        canvas.getMapState().setRouteModel(routeModel);
     }
 
     private ArrayList<Edge> route = new ArrayList<>();
@@ -71,8 +71,10 @@ public class RouteController {
         dijkstra = null;
         lastInstructionNode = null;
         lastActionInstruction = null;
-        routeModel.clear();
-        canvas.repaint();
+        if (routeModel.hasRoute()) {
+            routeModel.clear();
+            canvas.repaint();
+        }
     }
 
     public double calculateTurn(Edge prevEdge, Edge currEdge) {
@@ -189,11 +191,11 @@ public class RouteController {
         routeDistance = 0;
         routeTime = 0;
 
-        Edge first = list.get(0);
+        Edge first = list.getFirst();
         String prevEdgeName = first.getStreet().getName();
         double tempLength = 0;
         Edge prevEdge = first;
-        lastInstructionNode = list.get(0).getTailNode();
+        lastInstructionNode = list.getFirst().getTailNode();
         for (int i = 0; i < list.size(); i++) {
             Edge currEdge = list.get(i);
             double meterMultiplier = - (MercatorProjector.unproject(currEdge.getTailNode().getLon(), currEdge.getTailNode().getLat()).getLat()) / 100;
@@ -234,7 +236,7 @@ public class RouteController {
             routeDistance += distance;
             addTimeToTotal(vehicle, currEdge, distance);
         }
-        routeModel.addInstruction(new Instruction("You have arrived at your destination", list.get(list.size() - 1).getHeadNode()));
+        routeModel.addInstruction(new Instruction("You have arrived at your destination", list.getLast().getHeadNode()));
     }
 
     public ArrayList<Edge> singleDirectRoute(ArrayList<Edge> route) {
@@ -261,7 +263,7 @@ public class RouteController {
     public void setRoute(boolean useBidirectional) {
         route = dijkstra.pathTo(dijkstra.getLastNode(), 1);
 
-        lastInstructionNode = route.get(0).getTailNode();
+        lastInstructionNode = route.getFirst().getTailNode();
         if (useBidirectional) {
             ArrayList<Edge> secondPart = dijkstra.pathTo(dijkstra.getLastNode(), 2);
             Collections.reverse(secondPart);
@@ -271,7 +273,7 @@ public class RouteController {
 
         float[] floats = new float[route.size() * 2 + 2];
 
-        Edge firstEdge = route.get(0);
+        Edge firstEdge = route.getFirst();
 
         floats[0] = firstEdge.getTailNode().getLon();
         floats[1] = firstEdge.getTailNode().getLat();
@@ -283,7 +285,7 @@ public class RouteController {
         }
 
         routeModel.setDrawableRoute(floats);
-        canvas.setRouteModel(routeModel);
+        canvas.getMapState().setRouteModel(routeModel);
         canvas.repaint();
     }
 
@@ -291,11 +293,16 @@ public class RouteController {
         dijkstra = new Dijkstra(model.getGraph(), startPoint, endPoint, vehicle, shortestRoute, useBidirectional, useAStar);
         setRoute(useBidirectional);
         generateRouteInfo(route, vehicle, model.getGraph());
-        canvas.setRouteModel(routeModel);
+        canvas.getMapState().setRouteModel(routeModel);
         canvas.repaint();
     }
 
     public double getRouteTime() {
         return routeTime;
+    }
+
+    public void setModel(Model model) {
+        this.model = model;
+        routeModel.clear();
     }
 }

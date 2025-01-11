@@ -260,7 +260,7 @@ public class RouteControllerTest {
     void setRouteTest() throws Exception {
         Model model = new Model(new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/smallMapStmaz.osm")));
         MapCanvas canvas = new MapCanvas();
-        canvas.setModelWithoutReset(model);
+        canvas.getMapState().setModelWithoutReset(model);
         routeController = new RouteController(model, canvas);
         routeController.setDijkstra(11654496977L, 1677959389L, "Car", true, true, true);
         routeController.setRoute(true);
@@ -281,7 +281,7 @@ public class RouteControllerTest {
         try {
             Model model = new Model(new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/smallMapStmaz.osm")));
             MapCanvas canvas = new MapCanvas();
-            canvas.setModelWithoutReset(model);
+            canvas.getMapState().setModelWithoutReset(model);
             routeController = new RouteController(model, canvas);
             routeController.setDijkstra(11654496977L, 1677959389L, "Car", true, true, true);
             routeController.setRoute(true);
