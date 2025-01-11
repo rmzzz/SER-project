@@ -11,6 +11,7 @@ jobs:
   build-and-analyze:
     name: Build and analyze
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,5 +34,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GRADLE_OPTIONS: "--info --no-daemon --stacktrace"
-          TEST_OPTIONS: "-Dbong.dir=/tmp"
+          TEST_OPTIONS: "-Dbong.dir=/tmp -Dtestfx.robot=glass -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dprism.order=sw"
         run: ./gradlew build jacocoTestReport sonar $GRADLE_OPTIONS $TEST_OPTIONS
