@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-//@Disabled("JFX Platform.startup prevents running on GitHub Actions")
+@Disabled("JFX Platform.startup prevents running on GitHub Actions")
 @Timeout(10)
 class MainControllerTest {
     MainController mainController;
