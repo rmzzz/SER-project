@@ -4,12 +4,14 @@ import java.util.List;
 
 import javafx.geometry.Point2D;
 
-public abstract class CanvasElement implements Drawable {
+public abstract class CanvasElement {
   public abstract Point2D getCentroid();
   public abstract Range getBoundingBox();
 
   public static Range boundingRangeOf(List<CanvasElement> list){
-    if(list.size() < 1) throw new RuntimeException("Empty list cannot have bounding range");
+    if (list.isEmpty()) {
+      throw new RuntimeException("Empty list cannot have bounding range");
+    }
     Float minX = Float.MAX_VALUE;
     Float minY = Float.MAX_VALUE;
     Float maxX = Float.NEGATIVE_INFINITY;

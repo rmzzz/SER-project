@@ -4,7 +4,6 @@ import bong.OSMReader.Bound;
 import bong.OSMReader.KDTree;
 import bong.OSMReader.Model;
 import bong.OSMReader.Node;
-import bong.controllers.RouteController;
 import bong.routeFinding.Dijkstra;
 import bong.routeFinding.Edge;
 import bong.routeFinding.Instruction;
@@ -113,8 +112,10 @@ public class MapRenderer {
                 }
 
                 gc.setTextAlign(TextAlignment.CENTER);
-                for(CanvasElement element : mapState.getModel().getCitiesKdTree().rangeSearch(renderRange)){
-                    element.draw(gc, this.pixelwidth, smartTrace);
+                for (CanvasElement element : mapState.getModel().getCitiesKdTree().rangeSearch(renderRange)) {
+                    if (element instanceof Drawable drawable) {
+                        drawable.draw(gc, this.pixelwidth, smartTrace);
+                    }
                 }
             }
         }
@@ -150,9 +151,13 @@ public class MapRenderer {
         if (kdTree != null) {
             setFillAndStroke(type, useRegularColors);
 
-            for(CanvasElement element : kdTree.rangeSearch(renderRange)){
-                element.draw(gc, 1/this.pixelwidth, smartTrace);
-                if (type.shouldHaveFill()) gc.fill();
+            for (CanvasElement element : kdTree.rangeSearch(renderRange)) {
+                if (element instanceof Drawable drawable) {
+                    drawable.draw(gc, 1/this.pixelwidth, smartTrace);
+                }
+                if (type.shouldHaveFill()) {
+                    gc.fill();
+                }
 
                 if(drawBoundingBox) {
                     drawRange(element.getBoundingBox(), this.pixelwidth/2);

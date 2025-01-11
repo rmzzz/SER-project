@@ -1,7 +1,8 @@
 package bong.canvas;
 
 import bong.OSMReader.*;
-import bong.model.RouteModel;
+import bong.routeFinding.Edge;
+import bong.OSMReader.Node;
 import bong.routeFinding.*;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
