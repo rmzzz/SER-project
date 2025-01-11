@@ -39,10 +39,4 @@ public class App extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
     }
-
-    public static void main(String[] args) {
-        App.launch(args);
-    }
-
-
 }
