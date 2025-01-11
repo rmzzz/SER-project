@@ -16,48 +16,27 @@ public class Address extends CanvasElement implements Serializable, Comparable<A
     private Range boundingBox;
 
     public Address(
-            String _street,
-            String _house,
-            String _postcode,
-            String _city,
-            String _municipality,
-            float _lat,
-            float _lon
+            String street,
+            String house,
+            String postcode,
+            String city,
+            String municipality,
+            float lat,
+            float lon
     ) {
-        if (_street != null) {
-            street = _street.intern();
-        } else {
-            street = _street;
-        }
-
-        if (_house != null) {
-            house = _house.intern();
-        } else {
-            house = _house;
-        }
-
-        if (_postcode != null) {
-            postcode = _postcode.intern();
-        } else {
-            postcode = _postcode;
-        }
-
-        if (_city !=  null) {
-            city = _city.intern();
-        } else {
-            city = _city;
-        }
-
-        if (_municipality != null) {
-            municipality = _municipality.intern();
-        } else {
-            municipality = _municipality;
-        }
-
-        lat = _lat;
-        lon = _lon;
+        this.street = internNonNull(street);
+        this.house = internNonNull(house);
+        this.postcode = internNonNull(postcode);
+        this.city = internNonNull(city);
+        this.municipality = internNonNull(municipality);
+        this.lat = lat;
+        this.lon = lon;
 
         setBoundingBox();
+    }
+
+    static String internNonNull(String s) {
+        return s != null ? s.intern() : null;
     }
 
     public String toString() {
@@ -92,28 +71,22 @@ public class Address extends CanvasElement implements Serializable, Comparable<A
 
     @Override
     public int compareTo(Address that) {
-        // street house floor side postcode city
-        
-        String this_street = (this.street != null) ? this.street.toLowerCase() : null;
-        String that_street = (that.street != null) ? that.street.toLowerCase() : null;
-        if(this_street == null && that_street == null) return 0;
-        if(this_street == null) return -1;
-        if(that_street == null) return 1;
-        if(0 != this_street.compareTo(that_street)) return this_street.compareTo(that_street);
+        // street house (floor side postcode) city
+        int cmp;
+        if ((cmp = compareFields(this.street, that.street)) != 0) {
+            return cmp;
+        }
+        if ((cmp = compareFields(this.house, that.house)) != 0) {
+            return cmp;
+        }
+        return compareFields(this.city, that.city);
+    }
 
-        String this_house = (this.house != null) ? this.house.toLowerCase() : null;
-        String that_house = (that.house != null) ? that.house.toLowerCase() : null;
-        if(this_house == null && that_house == null) return 0;
-        if(this_house == null) return -1;
-        if(that_house == null) return 1;
-        if(0 != this_house.compareTo(that_house)) return this_house.compareTo(that_house);
-
-        String this_city = (this.city != null) ? this.city.toLowerCase() : null;
-        String that_city = (that.city != null) ? that.city.toLowerCase() : null;
-        if(this_city == null && that_city == null) return 0;
-        if(this_city == null) return -1;
-        if(that_city == null) return 1;
-        return this_city.compareTo(that_city);
+    static int compareFields(String a, String b) {
+        return (a == null && b == null) ? 0
+                : (a == null) ? -1
+                        : (b == null) ? 1
+                                : a.compareTo(b);
     }
 
     public float getLat() {
