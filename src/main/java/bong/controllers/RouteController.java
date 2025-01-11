@@ -22,6 +22,7 @@ public class RouteController {
         this.model = model;
         this.canvas = canvas;
         routeModel = new RouteModel();
+        canvas.setRouteModel(routeModel);
     }
 
     private ArrayList<Edge> route = new ArrayList<>();

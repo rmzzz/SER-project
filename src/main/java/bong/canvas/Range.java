@@ -5,7 +5,6 @@ import java.util.stream.DoubleStream;
 
 import bong.util.Geometry;
 import javafx.geometry.Point2D;
-import javafx.scene.paint.Color;
 
 public class Range implements Serializable {
   private static final long serialVersionUID = 1L;
@@ -27,13 +26,6 @@ public class Range implements Serializable {
       this.minY = maxY;
       this.maxY = minY;
     }
-  }
-
-  public void draw(Drawer gc, double invertedZoomFactor) {
-    gc.setStroke(Color.BLUE);
-    gc.setLineWidth(invertedZoomFactor);
-    gc.strokeRect(minX, minY, maxX-minX, maxY-minY);
-    gc.stroke();
   }
 
   public boolean isEnclosedBy(Range that){

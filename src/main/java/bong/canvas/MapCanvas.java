@@ -149,8 +149,7 @@ public class MapCanvas extends Canvas {
             }
 
             if(drawBound) {
-                gc.setStroke(Color.BLACK);
-                model.getBound().draw(gc, pixelwidth, false);
+                drawModelBound(Color.BLACK, pixelwidth);
             }
 
             if (currentRouteOrigin != null) currentRouteOrigin.draw(gc, pixelwidth);
@@ -181,7 +180,9 @@ public class MapCanvas extends Canvas {
         scaleBar.draw(gc, pixelwidth, false);
         gc.setStroke(Color.BLACK);
 
-        if(!renderFullScreen) renderRange.draw(gc, pixelwidth);
+        if (!renderFullScreen) {
+            drawRange(renderRange, pixelwidth);
+        }
 
         if (useRegularColors) {
             gc.setStroke(Color.BLACK);
@@ -196,6 +197,34 @@ public class MapCanvas extends Canvas {
             drawNode(startNode);
             drawNode(destinationNode);
         }
+    }
+
+    void drawModelBound(Color color, double scale) {
+        Bound bound = model.getBound();
+        float minLon = bound.getMinLon();
+        float minLat = bound.getMinLat();
+        float maxLon = bound.getMaxLon();
+        float maxLat = bound.getMaxLat();
+        gc.setStroke(color);
+        gc.beginPath();
+        gc.setLineWidth(scale);
+        gc.moveTo(minLon, minLat);
+        gc.lineTo(minLon, maxLat);
+        gc.lineTo(maxLon, maxLat);
+        gc.lineTo(maxLon, minLat);
+        gc.lineTo(minLon, minLat);
+        gc.stroke();
+    }
+
+    void drawRange(Range range, double lineWidth) {
+        float minX = range.getMinX();
+        float minY = range.getMinY();
+        float maxX = range.getMaxX();
+        float maxY = range.getMaxY();
+        gc.setStroke(Color.BLUE);
+        gc.setLineWidth(lineWidth);
+        gc.strokeRect(minX, minY, maxX-minX, maxY-minY);
+        gc.stroke();
     }
 
     public void setDraggedSquare(LinePath linePath) {
@@ -336,7 +365,7 @@ public class MapCanvas extends Canvas {
                 if (type.shouldHaveFill()) gc.fill();
 
                 if(drawBoundingBox) {
-                    element.getBoundingBox().draw(gc, pixelwidth/2f);
+                    drawRange(element.getBoundingBox(), pixelwidth/2);
                 }
             }
         }
