@@ -14,27 +14,9 @@ public class RouteDestinationIndicator extends Indicator {
 
     public void draw(Drawer gc, double size) {
         double factor = size*0.6;
-
-        gc.setFill(Color.RED);
-        gc.beginPath();
-        String translated = circlePath(super.getCenterX(),super.getCenterY(),(float) factor*15);
-        gc.appendSVGPath(translated);
-        gc.closePath();
-        gc.fill();
-
-        gc.setFill(Color.WHITE);
-        gc.beginPath();
-        translated = circlePath(super.getCenterX(),super.getCenterY(),(float) factor*10);
-        gc.appendSVGPath(translated);
-        gc.closePath();
-        gc.fill();
-
-        gc.setFill(Color.RED);
-        gc.beginPath();
-        translated = circlePath(super.getCenterX(),super.getCenterY(),(float) factor*5);
-        gc.appendSVGPath(translated);
-        gc.closePath();
-        gc.fill();
+        drawCenterCircle(gc, Color.RED, factor*15);
+        drawCenterCircle(gc, Color.WHITE, factor*10);
+        drawCenterCircle(gc, Color.RED, factor*5);
     }
 
 }

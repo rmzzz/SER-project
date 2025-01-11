@@ -1,5 +1,7 @@
 package bong.canvas;
 
+import javafx.scene.paint.Color;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,5 +51,14 @@ public abstract class Indicator {
     }
 
     return out;
-}
+  }
+
+  protected void drawCenterCircle(Drawer gc, Color fillColor, double radius) {
+      gc.setFill(fillColor);
+      gc.beginPath();
+      String translated = circlePath(centerX, centerY, (float) radius);
+      gc.appendSVGPath(translated);
+      gc.closePath();
+      gc.fill();
+  }
 }
