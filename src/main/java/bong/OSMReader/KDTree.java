@@ -7,11 +7,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import bong.canvas.CanvasElement;
 import bong.canvas.Range;
 import bong.routeFinding.Edge;
 import bong.routeFinding.Street;
 import bong.util.Geometry;
-import bong.canvas.CanvasElement;
 import javafx.geometry.Point2D;
 
 public class KDTree implements Serializable {
@@ -179,7 +180,7 @@ public class KDTree implements Serializable {
 
       if(first.bound.distanceToPoint(query) < bestDist){
         result = first.nearestNeighborForEdges(query, bestDist, vehicle);
-        if(result != null) bestDist = Geometry.distance(query, result.getCentroid());
+        if(result != null) bestDist = Geometry.distance(query, result.getAsPoint());
       }
       Node temp;
       if(last.bound.distanceToPoint(query) < bestDist){
@@ -196,9 +197,9 @@ public class KDTree implements Serializable {
       Node c = closestNodeInEdges(query, vehicle);
       if(c == null) return null;
 
-      if(Geometry.distance(query, c.getCentroid()) < bestDist){
+      if(Geometry.distance(query, c.getAsPoint()) < bestDist){
         result = c;
-        bestDist = Geometry.distance(query, c.getCentroid());
+        bestDist = Geometry.distance(query, c.getAsPoint());
       }
       return result;
     }

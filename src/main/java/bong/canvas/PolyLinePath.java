@@ -7,8 +7,9 @@ import javafx.geometry.Point2D;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-public class PolyLinePath extends CanvasElement implements Serializable {
+public class PolyLinePath extends CanvasElement implements Drawable, Serializable {
     private static final long serialVersionUID = 1L;
+
     private ArrayList<LinePath> linePaths;
     private Range boundingBox;
 

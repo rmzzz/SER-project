@@ -6,10 +6,7 @@ import bong.OSMReader.Way;
 import javafx.geometry.Point2D;
 import java.io.Serializable;
 
-public class LinePath extends CanvasElement implements Serializable {
-    /**
-     *
-     */
+public class LinePath extends CanvasElement implements Drawable, Serializable {
     private static final long serialVersionUID = 1L;
     private float[] coords_;
     private Range boundingBox;

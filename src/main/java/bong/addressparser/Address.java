@@ -1,17 +1,13 @@
 package bong.addressparser;
 
 import bong.canvas.CanvasElement;
-import bong.canvas.Drawer;
 import bong.canvas.Range;
 import javafx.geometry.Point2D;
 import java.io.Serializable;
-import java.util.regex.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Address extends CanvasElement implements Serializable, Comparable<Address> {
-
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
 
     private final String street, house, postcode, city, municipality;
@@ -160,11 +156,6 @@ public class Address extends CanvasElement implements Serializable, Comparable<A
 
     public void setBoundingBox() {
         this.boundingBox = new Range(this.lon, this.lat, this.lon, this.lat);
-    }
-
-    @Override
-    public void draw(Drawer gc, double scale, boolean smartTrace) {
-
     }
 
     public static class Builder {

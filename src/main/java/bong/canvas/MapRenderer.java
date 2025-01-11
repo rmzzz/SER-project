@@ -149,7 +149,10 @@ public class MapRenderer {
 
             gc.setTextAlign(TextAlignment.CENTER);
             for (CanvasElement element : mapState.getModel().getCitiesKdTree().rangeSearch(renderRange)) {
-                element.draw(gc, this.pixelwidth, smartTrace);
+                if (element instanceof Drawable drawable) {
+                    drawable.draw(gc, this.pixelwidth, smartTrace);
+                }
+
             }
         }
     }
@@ -185,8 +188,12 @@ public class MapRenderer {
             setFillAndStroke(type, useRegularColors);
 
             for (CanvasElement element : kdTree.rangeSearch(renderRange)) {
-                element.draw(gc, 1 / this.pixelwidth, smartTrace);
-                if (type.shouldHaveFill()) gc.fill();
+                if (element instanceof Drawable drawable) {
+                    drawable.draw(gc, 1/this.pixelwidth, smartTrace);
+                }
+                if (type.shouldHaveFill()) {
+                    gc.fill();
+                }
 
                 if (drawBoundingBox) {
                     drawRange(element.getBoundingBox(), this.pixelwidth / 2);

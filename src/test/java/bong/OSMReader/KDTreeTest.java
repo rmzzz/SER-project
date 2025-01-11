@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import bong.canvas.CanvasElement;
 import org.junit.jupiter.api.Test;
 
-import bong.canvas.CanvasElement;
 import bong.canvas.LinePath;
 import bong.canvas.Range;
 import bong.routeFinding.Edge;

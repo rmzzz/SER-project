@@ -5,10 +5,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.text.Font;
 import java.io.Serializable;
 
-public class City extends CanvasElement implements Serializable, Comparable<City> {
-    /**
-     *
-     */
+public class City extends CanvasElement implements Drawable, Serializable, Comparable<City> {
     private static final long serialVersionUID = 1L;
     private final String name;
     private final Node node;

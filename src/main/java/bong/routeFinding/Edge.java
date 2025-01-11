@@ -1,19 +1,15 @@
 package bong.routeFinding;
 
 import bong.OSMReader.Node;
-import bong.canvas.CanvasElement;
-import bong.canvas.Drawer;
 import bong.canvas.Range;
+import bong.canvas.CanvasElement;
 import bong.util.Geometry;
 import javafx.geometry.Point2D;
 import java.io.Serializable;
 
 public class Edge extends CanvasElement implements Serializable {
-
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
+
     private float weight;
     private Street street;
 
@@ -85,10 +81,5 @@ public class Edge extends CanvasElement implements Serializable {
         double distToTail = Geometry.distance(query.getX(), query.getY(), this.getTailNode().getLon(), this.getTailNode().getLat());
         double distToHead = Geometry.distance(query.getX(), query.getY(), this.getHeadNode().getLon(), this.getHeadNode().getLat());
         return distToTail < distToHead ? this.getTailNode() : this.getHeadNode();
-    }
-
-    @Override
-    public void draw(Drawer gc, double scale, boolean smartTrace) {
-        // ignored
     }
 }
