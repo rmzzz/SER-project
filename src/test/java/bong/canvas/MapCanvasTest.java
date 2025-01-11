@@ -1,5 +1,6 @@
 package bong.canvas;
 
+import javafx.geometry.Point2D;
 import javafx.scene.transform.Affine;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +21,16 @@ class MapCanvasTest {
         canvas.clearOriginDestination();
         assertNull(canvas.getCurrentRouteDestination());
         assertNull(canvas.getCurrentRouteOrigin());
+    }
+
+    @Test
+    void getModelCoordinatesNonInvertible() {
+        Affine trans;
+        canvas = new MapCanvas();
+        trans = canvas.getMapRenderer().getTrans();
+        trans.prependScale(0, 0);  // non-invertible
+        Point2D result = canvas.getMapRenderer().getModelCoordinates(1.0, 1.0); // NonInvertibleTransformException
+        assertNull(result);
     }
 
     @Test

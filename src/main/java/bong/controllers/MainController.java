@@ -558,7 +558,7 @@ public class MainController {
             }
         }
 
-        canvas.getMapState().setTypesToBeDrawn(typesToBeDrawn);
+        canvas.getMapState().setTypesToBeDrawn(typesToBeDrawn, canvas);
     }
 
     private void addItemToMyPoints(PointOfInterest poi) {
@@ -791,14 +791,14 @@ public class MainController {
                 setModelFromBinary(is);
                 break;
             case ".osm":
-                canvas.getMapState().setTypesToBeDrawn(new ArrayList<>());
+                canvas.getMapState().setTypesToBeDrawn(new ArrayList<>(), canvas);
 
                 OSMReader reader = new OSMReader(is);
                 setModel(new Model(reader));
                 reader.destroy();
 
                 ArrayList<Type> list = new ArrayList<>(Arrays.asList(Type.getTypes()));
-                canvas.getMapState().setTypesToBeDrawn(list);
+                canvas.getMapState().setTypesToBeDrawn(list, canvas);
                 break;
             case ".zip":
                 loadFile(FileController.loadZip(file));

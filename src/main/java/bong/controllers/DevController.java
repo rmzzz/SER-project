@@ -76,7 +76,7 @@ public class DevController {
                 CheckBox check = (CheckBox) node;
                 check.setSelected(true);
             }
-            canvas.getMapState().setTypesToBeDrawn(Arrays.asList(Type.getTypes()));
+            canvas.getMapState().setTypesToBeDrawn(Arrays.asList(Type.getTypes()), canvas);
         });
 
         deselectall.setOnAction(e -> {
@@ -84,7 +84,7 @@ public class DevController {
                 CheckBox check = (CheckBox) node;
                 check.setSelected(false);
             }
-            canvas.getMapState().setTypesToBeDrawn(new ArrayList<>());
+            canvas.getMapState().setTypesToBeDrawn(new ArrayList<>(), canvas);
         });
 
         smartTraceToggle.setSelected(true);
@@ -182,6 +182,6 @@ public class DevController {
             CheckBox check = (CheckBox) node;
             if (check.isSelected()) typesToBeDrawn.add((Type) check.getUserData());
         }
-        canvas.getMapState().setTypesToBeDrawn(typesToBeDrawn);
+        canvas.getMapState().setTypesToBeDrawn(typesToBeDrawn, canvas);
     }
 }

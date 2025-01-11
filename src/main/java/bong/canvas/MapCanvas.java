@@ -68,7 +68,7 @@ public class MapCanvas extends Canvas {
     }
 
     public void setModel(Model model) {
-        this.mapState.setModel(model);
+        this.mapState.setModel(model, this);
         this.mapRenderer.resetView(model, this);
     }
 
