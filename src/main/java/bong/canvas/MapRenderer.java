@@ -4,7 +4,6 @@ import bong.OSMReader.Bound;
 import bong.OSMReader.KDTree;
 import bong.OSMReader.Model;
 import bong.OSMReader.Node;
-import bong.controllers.RouteController;
 import bong.routeFinding.Dijkstra;
 import bong.routeFinding.Edge;
 import bong.routeFinding.Instruction;
@@ -96,9 +95,9 @@ public class MapRenderer {
                 drawModelBound(mapState.getModel().getBound(), Color.BLACK, this.pixelwidth);
             }
 
-            if (mapCanvas.getCurrentRouteOrigin() != null) mapCanvas.getCurrentRouteOrigin() .draw(gc, this.pixelwidth);
-            if (mapCanvas.getCurrentRouteDestination() != null) mapCanvas.getCurrentRouteDestination().draw(gc, this.pixelwidth);
-            if (mapCanvas.getCurrentPin() != null) mapCanvas.getCurrentPin().draw(gc, this.pixelwidth);
+            if (mapCanvas.getMapRouteManager().getCurrentRouteOrigin() != null) mapCanvas.getMapRouteManager().getCurrentRouteOrigin() .draw(gc, this.pixelwidth);
+            if (mapCanvas.getMapRouteManager().getCurrentRouteDestination() != null) mapCanvas.getMapRouteManager().getCurrentRouteDestination().draw(gc, this.pixelwidth);
+            if (mapCanvas.getMapPinManager().getCurrentPin() != null) mapCanvas.getMapPinManager().getCurrentPin().draw(gc, this.pixelwidth);
 
             if (showCities) {
                 gc.setStroke(Color.WHITE);
@@ -138,8 +137,8 @@ public class MapRenderer {
         }
 
         if (mapState.getShowRoadNodes()) {
-            drawNode(mapCanvas.getStartNode());
-            drawNode(mapCanvas.getDestinationNode());
+            drawNode(mapCanvas.getMapRouteManager().getStartNode());
+            drawNode(mapCanvas.getMapRouteManager().getDestinationNode());
         }
     }
 

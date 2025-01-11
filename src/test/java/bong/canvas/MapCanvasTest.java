@@ -12,15 +12,15 @@ class MapCanvasTest {
 
     @Test
     void clearOriginDestinationTest() {
-        canvas.setCurrentRouteDestination();
-        canvas.setCurrentRouteOrigin();
+        canvas.getMapRouteManager().setCurrentRouteDestination();
+        canvas.getMapRouteManager().setCurrentRouteOrigin();
 
-        assertEquals(1, canvas.getCurrentRouteDestination().centerX);
-        assertEquals(1, canvas.getCurrentRouteOrigin().centerX);
+        assertEquals(1, canvas.getMapRouteManager().getCurrentRouteDestination().centerX);
+        assertEquals(1, canvas.getMapRouteManager().getCurrentRouteOrigin().centerX);
 
-        canvas.clearOriginDestination();
-        assertNull(canvas.getCurrentRouteDestination());
-        assertNull(canvas.getCurrentRouteOrigin());
+        canvas.getMapRouteManager().clearOriginDestination(canvas);
+        assertNull(canvas.getMapRouteManager().getCurrentRouteDestination());
+        assertNull(canvas.getMapRouteManager().getCurrentRouteOrigin());
     }
 
     @Test
@@ -36,7 +36,7 @@ class MapCanvasTest {
     @Test
     void updateSearchRangeTest() {
         canvas = new MapCanvas();
-        canvas.repaint();
+        canvas.getMapRenderer().repaint(canvas);
         canvas.getMapState().setRenderFullScreen(false);
         canvas.getMapRenderer().updateSearchRange(canvas);
 

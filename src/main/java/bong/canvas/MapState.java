@@ -38,7 +38,7 @@ public class MapState {
 
     public void setTypesToBeDrawn(List<Type> typesToBeDrawn, MapCanvas mapCanvas) {
         this.typesToBeDrawn = typesToBeDrawn;
-        mapCanvas.repaint();
+        mapCanvas.getMapRenderer().repaint(mapCanvas);
     }
 
     public List<Type> getTypesToBeDrawn() {
