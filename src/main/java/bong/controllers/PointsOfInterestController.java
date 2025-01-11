@@ -2,7 +2,6 @@ package bong.controllers;
 
 import bong.canvas.PointOfInterest;
 import javafx.geometry.Point2D;
-import javafx.scene.control.TextInputDialog;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -60,16 +59,6 @@ public class PointsOfInterestController {
         }
     }
 
-    public void showAddPointDialog(Point2D point) {
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Point of interest");
-        dialog.setContentText("Save point of interest");
-        dialog.setHeaderText("Enter the name of the point");
-        dialog.setContentText("Name:");
-        Optional<String> givenName = dialog.showAndWait();
-        addPointOfInterest(point, givenName);
-    }
-
     public void addPointOfInterest(Point2D point, Optional<String> givenName) {
         if (givenName.isPresent()) {
             PointOfInterest poi = new PointOfInterest((float) point.getX(), (float) point.getY(), givenName.get());
@@ -78,6 +67,7 @@ public class PointsOfInterestController {
         savePointsOfInterest();
     }
 
+    @SuppressWarnings("unchecked")
     public void loadPointsOfInterest() {
         ArrayList<PointOfInterest> list = new ArrayList<>();
         try {

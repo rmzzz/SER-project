@@ -25,10 +25,11 @@ class MapCanvasTest {
     @Test
     void updateSearchRangeTest() {
         canvas = new MapCanvas();
-        canvas.setRenderFullScreen(false);
-        canvas.updateSearchRange(1);
+        canvas.repaint();
+        canvas.getMapState().setRenderFullScreen(false);
+        canvas.getMapRenderer().updateSearchRange(canvas);
 
-        Range actual = canvas.getRenderRange();
+        Range actual = canvas.getMapRenderer().getRenderRange();
         assertEquals(-100, actual.getMinX());
         assertEquals(-100, actual.getMinY());
         assertEquals(100, actual.getMaxX());
@@ -41,27 +42,27 @@ class MapCanvasTest {
         boolean actual;
 
         canvas = new MapCanvas();
-        trans = canvas.getTrans();
+        trans = canvas.getMapRenderer().getTrans();
         trans.prependScale(1,1);
-        actual = canvas.shouldZoom(1.5);
+        actual = canvas.getMapRenderer().shouldZoom(1.5);
         assertTrue(actual);
 
         canvas = new MapCanvas();
-        trans = canvas.getTrans();
+        trans = canvas.getMapRenderer().getTrans();
         trans.prependScale(20,20);
-        actual = canvas.shouldZoom(1.5);
+        actual = canvas.getMapRenderer().shouldZoom(1.5);
         assertFalse(actual);
 
         canvas = new MapCanvas();
-        trans = canvas.getTrans();
+        trans = canvas.getMapRenderer().getTrans();
         trans.prependScale(1,1);
-        actual = canvas.shouldZoom(0.5);
+        actual = canvas.getMapRenderer().shouldZoom(0.5);
         assertTrue(actual);
 
         canvas = new MapCanvas();
-        trans = canvas.getTrans();
+        trans = canvas.getMapRenderer().getTrans();
         trans.prependScale(0.0001,0.0001);
-        actual = canvas.shouldZoom(0.5);
+        actual = canvas.getMapRenderer().shouldZoom(0.5);
         assertFalse(actual);
     }
 

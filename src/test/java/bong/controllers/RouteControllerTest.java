@@ -8,7 +8,6 @@ import bong.routeFinding.Edge;
 import bong.routeFinding.Graph;
 import bong.routeFinding.Street;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -227,7 +226,7 @@ public class RouteControllerTest {
     void setRouteTest() throws Exception {
         Model model = new Model(new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/smallMapStmaz.osm")));
         MapCanvas canvas = new MapCanvas();
-        canvas.setModelWithoutReset(model);
+        canvas.getMapState().setModelWithoutReset(model);
         routeController = new RouteController(canvas);
         routeController.setDijkstra(11654496977L, 1677959389L, "Car", true, true, true);
         routeController.setRoute(true);
@@ -248,16 +247,16 @@ public class RouteControllerTest {
         try {
             Model model = new Model(new OSMReader(getClass().getClassLoader().getResourceAsStream("bong/smallMapStmaz.osm")));
             MapCanvas canvas = new MapCanvas();
-            canvas.setModelWithoutReset(model);
+            canvas.getMapState().setModelWithoutReset(model);
             routeController = new RouteController(canvas);
             routeController.setDijkstra(11654496977L, 1677959389L, "Car", true, true, true);
             routeController.setRoute(true);
             routeController.clearRoute();
 
-            Assertions.assertEquals(null, routeController.getRoute());
-            Assertions.assertEquals(null, routeController.getInstructions());
-            Assertions.assertEquals(null, routeController.getDijkstra());
-            Assertions.assertEquals(null, routeController.getDrawableRoute());
+            Assertions.assertNull(routeController.getRoute());
+            Assertions.assertNull(routeController.getInstructions());
+            Assertions.assertNull(routeController.getDijkstra());
+            Assertions.assertNull(routeController.getDrawableRoute());
         } catch (Exception e) {
             Assertions.fail();
         }

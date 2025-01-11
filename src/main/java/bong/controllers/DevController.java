@@ -1,9 +1,6 @@
 package bong.controllers;
 
-import bong.canvas.City;
-import bong.canvas.MapCanvas;
-import bong.canvas.PointOfInterest;
-import bong.canvas.Type;
+import bong.canvas.*;
 import bong.routeFinding.Instruction;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -55,11 +52,11 @@ public class DevController {
     public void initialize() {
 
         zoomIn.setOnAction(e -> {
-            canvas.zoom(2, canvas.getWidth() / 2, canvas.getHeight() / 2);
+            canvas.getMapRenderer().zoom(2, canvas.getWidth() / 2, canvas.getHeight() / 2, canvas);
         });
 
         zoomOut.setOnAction(e -> {
-            canvas.zoom(0.5, canvas.getWidth() / 2, canvas.getHeight() / 2);
+            canvas.getMapRenderer().zoom(0.5, canvas.getWidth() / 2, canvas.getHeight() / 2, canvas);
         });
 
         for (Type type : Type.getTypes()) {
@@ -77,7 +74,7 @@ public class DevController {
                 CheckBox check = (CheckBox) node;
                 check.setSelected(true);
             }
-            canvas.setTypesToBeDrawn(Arrays.asList(Type.getTypes()));
+            canvas.getMapState().setTypesToBeDrawn(Arrays.asList(Type.getTypes()));
         });
 
         deselectall.setOnAction(e -> {
@@ -85,27 +82,27 @@ public class DevController {
                 CheckBox check = (CheckBox) node;
                 check.setSelected(false);
             }
-            canvas.setTypesToBeDrawn(new ArrayList<>());
+            canvas.getMapState().setTypesToBeDrawn(new ArrayList<>());
         });
 
         smartTraceToggle.setSelected(true);
         smartTraceToggle.setOnAction(e -> {
-            canvas.setTraceType(smartTraceToggle.isSelected());
+            canvas.getMapRenderer().setTraceType(smartTraceToggle.isSelected(), canvas);
         });
 
         colorToggle.setSelected(true);
         colorToggle.setOnAction(e -> {
-            canvas.setUseRegularColors(colorToggle.isSelected());
+            canvas.getMapRenderer().setUseRegularColors(colorToggle.isSelected(), canvas);
         });
 
         citiesToggle.setSelected(true);
         citiesToggle.setOnAction(e -> {
-            canvas.setShowCities(citiesToggle.isSelected());
+            canvas.getMapRenderer().setShowCities(citiesToggle.isSelected(), canvas);
         });
 
         dependentDrawToggle.setSelected(true);
         dependentDrawToggle.setOnAction(e -> {
-            canvas.setUseDependentDraw(dependentDrawToggle.isSelected());
+            canvas.getMapRenderer().setUseDependentDraw(dependentDrawToggle.isSelected(), canvas);
         });
 
         vehicle.getItems().addAll("Walk", "Bicycle", "Car");
@@ -141,15 +138,15 @@ public class DevController {
             }
         });
 
-        fullscreenRange.selectedProperty().set(canvas.getRenderFullScreen());
+        fullscreenRange.selectedProperty().set(canvas.getMapState().getRenderFullScreen());
         fullscreenRange.setOnAction(e -> {
-            canvas.setRenderFullScreen(fullscreenRange.isSelected());
+            canvas.getMapState().setRenderFullScreen(fullscreenRange.isSelected());
             canvas.repaint();
         });
 
-        drawBoundingBox.selectedProperty().set(MapCanvas.drawBoundingBox);
+        drawBoundingBox.selectedProperty().set(MapRenderer.drawBoundingBox);
         drawBoundingBox.setOnAction(e -> {
-            MapCanvas.drawBoundingBox = drawBoundingBox.isSelected();
+            MapRenderer.drawBoundingBox = drawBoundingBox.isSelected();
             canvas.repaint();
         });
 
@@ -158,9 +155,9 @@ public class DevController {
             canvas.setShowStreetNodeCloseToMouse(showClosestNode.isSelected());
         });
 
-        drawBound.setSelected(canvas.getDrawBound());
+        drawBound.setSelected(canvas.getMapRenderer().getDrawBound());
         drawBound.setOnAction(e -> {
-            canvas.setDrawBound(drawBound.isSelected());
+            canvas.getMapRenderer().setDrawBound(drawBound.isSelected());
         });
         
         drawPrettyCitynames.setSelected(City.getDrawPrettyCitynames());
@@ -168,9 +165,9 @@ public class DevController {
             City.setDrawPrettyCitynames(drawPrettyCitynames.isSelected());
         });
 
-        showFoundRoadNode.setSelected(canvas.isShowRoadNodes());
+        showFoundRoadNode.setSelected(canvas.getMapState().getShowRoadNodes());
         showFoundRoadNode.setOnAction(e -> {
-            canvas.setShowRoadNodes(showFoundRoadNode.isSelected());
+            canvas.getMapState().setShowRoadNodes(showFoundRoadNode.isSelected());
         });
 
         useBidirectional.setSelected(true);
@@ -183,6 +180,6 @@ public class DevController {
             CheckBox check = (CheckBox) node;
             if (check.isSelected()) typesToBeDrawn.add((Type) check.getUserData());
         }
-        canvas.setTypesToBeDrawn(typesToBeDrawn);
+        canvas.getMapState().setTypesToBeDrawn(typesToBeDrawn);
     }
 }
