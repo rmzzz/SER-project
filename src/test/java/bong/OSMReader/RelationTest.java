@@ -37,7 +37,7 @@ public class RelationTest {
         r.addWay(w1);
 
         assertEquals(1, r.getWays().size());
-        assertEquals(w1, r.getWays().get(0));
+        assertEquals(w1, r.getWays().getFirst());
     }
 
     @Test
@@ -48,13 +48,13 @@ public class RelationTest {
 
         Relation r = new Relation();
         r.addRefId(1L);
-        assertEquals(1L, r.getIds().get(0));
+        assertEquals(1L, r.getIds().getFirst());
 
         r.addRelation(relationHashMap.get(1L));
         r.nullifyIdArray();
         assertNull(r.getIds());
 
-        assertEquals(r1, r.getRelations().get(0));
+        assertEquals(r1, r.getRelations().getFirst());
     }
 
     @Test
@@ -78,5 +78,6 @@ public class RelationTest {
         r.addToOuter(w2);
 
         r.collectRelation(ndc);
+        assertEquals(3, ndc.getSize());
     }
 }

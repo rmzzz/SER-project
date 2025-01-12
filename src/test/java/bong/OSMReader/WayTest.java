@@ -173,5 +173,6 @@ public class WayTest {
         for(int i = 0; i < 12; i++){
             test.addNodeToFront(nd1.getAsLong());
         }
+        assertEquals(test.first(), 1);
     }
 }

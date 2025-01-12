@@ -78,9 +78,10 @@ public class OSMReader {
 
             while (reader.hasNext()) {
                 reader.next();
+                String element;
                 switch (reader.getEventType()) {
                     case START_ELEMENT:
-                        String element = reader.getLocalName().intern();
+                        element = reader.getLocalName().intern();
                         parseElement(reader, element);
                         break;
                     case END_ELEMENT:
@@ -103,7 +104,7 @@ public class OSMReader {
                                             drawableByType.put(type, new ArrayList<>());
                                         drawableByType.get(type).add(new LinePath(wayHolder, tempNodes));
                                     }
-                                    
+
                                 } else {
                                     Way before = tempCoastlines.remove(wayHolder.first());
                                     if (before != null) {
@@ -127,7 +128,7 @@ public class OSMReader {
                                 if(type == Type.UNKNOWN) break;
                                 relationHolder.collectRelation(tempNodes);
                                 if(!drawableByType.containsKey(type)) drawableByType.put(type, new ArrayList<>());
-                                if(relationHolder.getWays().size() > 0) drawableByType.get(type).add(new PolyLinePath(relationHolder, tempNodes));
+                                if(!relationHolder.getWays().isEmpty()) drawableByType.get(type).add(new PolyLinePath(relationHolder, tempNodes));
                                 type = Type.UNKNOWN;
                                 break;
                             case "osm":
@@ -140,7 +141,7 @@ public class OSMReader {
                                         coastlines.add(new LinePath(entry.getValue(), tempNodes));
                                     }
                                 }
-                                if(coastlines.size() == 0){
+                                if(coastlines.isEmpty()){
                                     Way land = new Way();
                                     land.addNode(-1);
                                     land.addNode(-2);
@@ -151,7 +152,11 @@ public class OSMReader {
                                 }
                                 drawableByType.put(Type.COASTLINE,coastlines);
                                 break;
+                            default:
+                                break;
                         }
+                        break;
+                    default:
                         break;
                 }
             }
@@ -175,24 +180,12 @@ public class OSMReader {
             }
             if (tagList.get(i).equals("highway")) {
 
-                int defaultSpeed;
-                switch(tagList.get(i + 1)) {
-                    case "motorway":
-                        defaultSpeed = 130;
-                        break;
-                    case "primary":
-                    case "secondary":
-                    case "tertiary":
-                    case "trunk":
-                        defaultSpeed = 80;
-                        break;
-                    case "living_street":
-                        defaultSpeed = 30;
-                        break;
-                    default:
-                        defaultSpeed = 50;
-                        break;
-                }
+                int defaultSpeed = switch (tagList.get(i + 1)) {
+                    case "motorway" -> 130;
+                    case "primary", "secondary", "tertiary", "trunk" -> 80;
+                    case "living_street" -> 30;
+                    default -> 100;
+                };
 
                 long[] nodes = wayHolder.getNodes();
                 currentStreet = new Street(tagList, defaultSpeed);
@@ -271,6 +264,8 @@ public class OSMReader {
             case "member":
                 parseMember(reader);
                 break;
+            default:
+                break;
         }
     }
 
@@ -283,7 +278,7 @@ public class OSMReader {
         for (Type currentType : typeArray){
             if (k.equals(currentType.getKey())){
                 for (String key : currentType.getValue()) {
-                    if (v.equals(key) || key.equals("")) {
+                    if (v.equals(key) || key.isEmpty()) {
                         type = currentType;
                         break;
                     }
@@ -307,6 +302,8 @@ public class OSMReader {
                     break;
                 case "addr:municipality":
                     builder = builder.municipality(v);
+                    break;
+                default:
                     break;
             }
         }
@@ -357,6 +354,8 @@ public class OSMReader {
             case "relation":
                 relationHolder.addRefId(Long.parseLong(reader.getAttributeValue(null, "ref")));
                 break;
+            default:
+                break;
         }
     }
 
@@ -373,10 +372,7 @@ public class OSMReader {
             if(lon <= bound.getMaxLon() && lon >= bound.getMinLon() && lat <= bound.getMaxLat() && lat >= bound.getMinLat()){ //Is inside bound
                 break;
             }
-            else{
-                coastline.remove(tempNodes.get(coastlineNodes[0]).getAsLong());
-                savedNd = currentNd;
-            }
+            else coastline.remove(tempNodes.get(coastlineNodes[0]).getAsLong());
         }
         savedNd = tempNodes.get(coastline.last());
         int size = coastlineNodes.length;
