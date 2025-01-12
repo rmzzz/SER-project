@@ -10,6 +10,7 @@ import bong.exceptions.ApplicationException;
 import bong.exceptions.FileTypeNotSupportedException;
 import bong.routeFinding.Instruction;
 import bong.util.ResourceLoader;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -21,6 +22,7 @@ import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -38,10 +40,13 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainController {
+    private static final String STYLE_CSS = "style.css";
+    private static final String BONG_ICON = "bongIcon.png";
+
     private Stage stage;
     private ResourceLoader resourceLoader;
     private Model model;
-    private Point2D lastMouse;
+    Point2D lastMouse;
     private ArrayList<Address> tempBest = new ArrayList<>();
     private boolean hasBeenDragged = false;
     private Address destinationAddress;
@@ -53,8 +58,6 @@ public class MainController {
     PointsOfInterestController poiController;
     SearchController searchController;
     RouteController routeController;
-    private final String styleCss = "style.css";
-    private final String bongIcon = "bongIcon.png";
 
     private ToggleGroup vehicleGroup = new ToggleGroup();
     @FXML private RadioButton carButton;
@@ -65,7 +68,7 @@ public class MainController {
     @FXML private RadioButton shortButton;
     @FXML private RadioButton fastButton;
 
-    private MapCanvas canvas;
+    MapCanvas canvas;
     private boolean shouldPan = true;
     private boolean showStreetOnHover = false;
 
@@ -78,7 +81,7 @@ public class MainController {
 
     public void setMapBinaryFromPath(String mapName) {
         try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream("bong/" + mapName + ".bin");
+            InputStream is = resourceLoader.getResourceAsStream(mapName + ".bin");
             setModelFromBinary(is);
         } catch (Exception e) {
             AlertController.showError("An error occurred", "Failed to load map of " + mapName, e);
@@ -139,92 +142,36 @@ public class MainController {
 
         mainView.setDisable(true);
         mainView.setFocusTraversable(false);
-        stage.addEventHandler(WindowEvent.WINDOW_SHOWN, e -> {
-            setDefaultMap();
+        stage.addEventHandler(WindowEvent.WINDOW_SHOWN, this::onWindowShown);
 
-            poiController.loadPointsOfInterest();
-            for (PointOfInterest poi : PointsOfInterestController.getPointsOfInterest()) {
-                addItemToMyPoints(poi);
-            }
-        });
-
-        loadClick.setOnAction((ActionEvent e) -> loadFileOnClick());
+        loadClick.setOnAction(e -> loadFileOnClick());
 
         canvas = mapCanvasWrapper.mapCanvas;
         routeController = new RouteController(model, canvas);
 
-        canvas.setOnMousePressed(e -> lastMouse = new Point2D(e.getX(), e.getY()));
-
-        canvas.setOnMouseDragged(e -> {
-            hasBeenDragged = true;
-
-            if (shouldPan) {
-                canvas.getMapRenderer().pan(e.getX() - lastMouse.getX(), e.getY() - lastMouse.getY(), canvas);
-                lastMouse = new Point2D(e.getX(), e.getY());
-            } else {
-                setLinePathForDrawedSquare(e);
-            }
-        });
-
-        canvas.setOnMouseReleased(e -> {
-            if (!hasBeenDragged && shouldPan) {
-                placePin();
-            }
-            if (!shouldPan) {
-                Point2D end = new Point2D(e.getX(), e.getY());
-                zoomToArea(end);
-            }
-
-            shouldPan = true;
-            hasBeenDragged = false;
-            canvas.getMapRenderer().setDraggedSquare(null, canvas);
-        });
+        canvas.setOnMousePressed(this::onCanvasMousePressed);
+        canvas.setOnMouseDragged(this::onCanvasMouseDragged);
+        canvas.setOnMouseReleased(this::onCanvasMouseReleased);
+        canvas.setOnScroll(this::onCanvasScroll);
 
         loadDefaultMap.setOnAction(e -> setDefaultMap());
 
         loadDenmark.setOnAction(e -> setMapBinaryFromPath("denmark"));
 
-        welcomeDenmark.setOnAction(e -> {
-            setMapBinaryFromPath("denmark");
-            closeWelcomeOverlay();
-        });
-
-        welcomeCopenhagen.setOnAction(e -> closeWelcomeOverlay());
-
-        welcomeCustom.setOnAction(e -> {
-            if(loadFileOnClick()) {
-                closeWelcomeOverlay();
-            }
-        });
-
-      
+        initWelcomeOverlay();
 
         saveAs.setOnAction(this::saveFileOnClick);
 
-        canvas.setOnScroll(e -> {
-            double factor = Math.pow(1.004,e.getDeltaY());
-            canvas.getMapRenderer().zoom(factor,e.getX(),e.getY(), canvas);
-        });
-
-        devtools.setOnAction(e -> {
-            Optional<ButtonType> result = AlertController.showConfirmation("Open dev tools?",
-                    "Dev tools are only supposed to be used by developers or advanced users");
-            if (result.isPresent() && result.get() == ButtonType.OK) {
-                openDevTools();
-            }
-        });
+        devtools.setOnAction(this::onDevToolsAction);
 
         publicTransport.setSelected(true);
         publicTransport.setOnAction(e -> updateShowPublicTransport(publicTransport.isSelected()));
 
         darkMode.setSelected(false);
-        darkMode.setOnAction(e -> canvas.getMapRenderer().setUseRegularColors(!darkMode.isSelected(), canvas));
+        darkMode.setOnAction(this::onDarkModeAction);
 
         hoverToShowStreet.setSelected(showStreetOnHover);
-        hoverToShowStreet.setOnAction(e -> {
-            showStreetOnHover = hoverToShowStreet.isSelected();
-            canvas.getMapRenderer().repaint(canvas);
-        });
+        hoverToShowStreet.setOnAction(this::onHoverToShowStreetAction);
 
         zoomToArea.setOnAction(e -> shouldPan = false);
 
@@ -233,84 +180,178 @@ public class MainController {
         help.setOnAction(e -> openHelp());
 
         setAsDestination.setTooltip(setupTooltip("Set as destination"));
-        setAsDestination.setOnAction(e -> {
-            routeController.clearRoute();
-            destinationAddress = currentAddress;
-            destinationPoint = currentPoint;
-            canvas.getMapRouteManager().setRouteDestination(destinationPoint, canvas);
-            showDirectionsMenu();
-        });
+        setAsDestination.setOnAction(this::onSetAsDestinationAction);
 
         setAsStart.setTooltip(setupTooltip("Set as start"));
-        setAsStart.setOnAction(e -> {
-            routeController.clearRoute();
-            startAddress = currentAddress;
-            startPoint = currentPoint;
-            canvas.getMapRouteManager().setRouteOrigin(startPoint, canvas);
-            showDirectionsMenu();
-        });
+        setAsStart.setOnAction(this::onSetAsStartAction);
 
-        pinInfoClose.setOnAction(e -> {
-            canvas.getMapPinManager().nullPin(canvas);
-            hidePinInfo();
-        });
+        pinInfoClose.setOnAction(this::onPinInfoCloseAction);
 
-        findRoute.setOnAction(e -> {
-            try {
-                findRouteFromGivenInputs();
-                showDirectionsMenu();
-            } catch (Exception ex) {
-                routeInfo.setVisible(false);
-                routeInfo.setManaged(false);
-                noRouteFound.setVisible(true);
-                noRouteFound.setManaged(true);
-                routeController.clearRoute();
-                ex.printStackTrace();
-            }
-        });
+        findRoute.setOnAction(this::onFindRouteAction);
 
-        canvas.setOnMouseMoved(e -> {
-            if (showStreetOnHover) {
-                canvas.getMapMouseInteraction().showStreetNearMouse(model, e, canvas);
-            }
-        });
+        canvas.setOnMouseMoved(this::onCanvasMouseMoved);
 
         swap.setOnAction(e -> swapStartAndDestination());
 
         setRouteOptionButtons();
 
-        searchField.focusedProperty().addListener((obs,oldVal,newVal) -> {
-            if (newVal) {
-                searchField.setText(searchController.getCurrentQuery());
-            }
+        searchField.focusedProperty().addListener(this::onSearchFieldFocusedChanged);
+        searchField.textProperty().addListener(this::onSearchFieldTextChanged);
+        searchField.addEventFilter(KeyEvent.KEY_PRESSED, this::onSearchFieldKeyPressed);
+        searchField.setOnAction(this::onSearchFieldAction);
+    }
+
+    void initWelcomeOverlay() {
+        welcomeDenmark.setOnAction(e -> {
+            setMapBinaryFromPath("denmark");
+            closeWelcomeOverlay();
         });
 
-        searchField.textProperty().addListener((obs,oldVal,newVal) -> {
-            hidePinInfo();
-            if (searchField.isFocused()) setCurrentQuery(searchField.getText().trim());
-            if (searchField.getText().isEmpty()) suggestionsContainer.getChildren().clear();
-            canvas.getMapPinManager().nullPin(canvas);
-        });
+        welcomeCopenhagen.setOnAction(e -> closeWelcomeOverlay());
 
-        searchField.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (event.getCode() == KeyCode.TAB) {
-                event.consume();
-            }
-            if (event.getCode() == KeyCode.DOWN) {
-                if(!suggestionsContainer.getChildren().isEmpty()) {
-                    suggestionsContainer.getChildren().getFirst().requestFocus();
-                }
-                event.consume();
+        welcomeCustom.setOnAction(e -> {
+            if (loadFileOnClick()) {
+                closeWelcomeOverlay();
             }
         });
+    }
 
-        searchField.setOnAction(e -> {
+    void onDevToolsAction(ActionEvent event) {
+        Optional<ButtonType> result = AlertController.showConfirmation("Open dev tools?",
+                "Dev tools are only supposed to be used by developers or advanced users");
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            openDevTools();
+        }
+    }
+
+    void onDarkModeAction(ActionEvent event) {
+        canvas.getMapRenderer().setUseRegularColors(!darkMode.isSelected(), canvas);
+    }
+
+    void onHoverToShowStreetAction(ActionEvent event) {
+        showStreetOnHover = hoverToShowStreet.isSelected();
+        canvas.getMapRenderer().repaint(canvas);
+    }
+
+    void onSetAsDestinationAction(ActionEvent event) {
+        routeController.clearRoute();
+        destinationAddress = currentAddress;
+        destinationPoint = currentPoint;
+        canvas.getMapRouteManager().setRouteDestination(destinationPoint, canvas);
+        showDirectionsMenu();
+    }
+
+    void onSetAsStartAction(ActionEvent event) {
+        routeController.clearRoute();
+        startAddress = currentAddress;
+        startPoint = currentPoint;
+        canvas.getMapRouteManager().setRouteOrigin(startPoint, canvas);
+        showDirectionsMenu();
+    }
+
+    void onPinInfoCloseAction(ActionEvent e) {
+        canvas.getMapPinManager().nullPin(canvas);
+        hidePinInfo();
+    }
+
+    void onFindRouteAction(ActionEvent event) {
+        try {
+            findRouteFromGivenInputs();
+            showDirectionsMenu();
+        } catch (Exception ex) {
+            routeInfo.setVisible(false);
+            routeInfo.setManaged(false);
+            noRouteFound.setVisible(true);
+            noRouteFound.setManaged(true);
+            routeController.clearRoute();
+            ex.printStackTrace();
+        }
+    }
+
+    void onCanvasMouseMoved(MouseEvent e) {
+        if (showStreetOnHover) {
+            canvas.getMapMouseInteraction().showStreetNearMouse(model, e, canvas);
+        }
+    }
+
+    void onSearchFieldFocusedChanged(ObservableValue<?> obs, Boolean oldVal, Boolean newVal) {
+        if (newVal != null && newVal) {
+            searchField.setText(searchController.getCurrentQuery());
+        }
+    }
+
+    void onSearchFieldTextChanged(ObservableValue<?> obs, String oldVal, String newVal) {
+        hidePinInfo();
+        if (searchField.isFocused()) {
+            setCurrentQuery(searchField.getText().trim());
+        }
+        if (searchField.getText().isEmpty()) {
+            suggestionsContainer.getChildren().clear();
+        }
+        canvas.getMapPinManager().nullPin(canvas);
+    }
+
+    void onSearchFieldKeyPressed(KeyEvent event) {
+        if (event.getCode() == KeyCode.TAB) {
+            event.consume();
+        }
+        if (event.getCode() == KeyCode.DOWN) {
             if(!suggestionsContainer.getChildren().isEmpty()) {
-                SuggestionButton b = (SuggestionButton) suggestionsContainer.getChildren().getFirst();
-                Address a = b.getAddress();
-                goToAddress(a);
+                suggestionsContainer.getChildren().getFirst().requestFocus();
             }
-        });
+            event.consume();
+        }
+    }
+
+    void onSearchFieldAction(ActionEvent e) {
+        if(!suggestionsContainer.getChildren().isEmpty()) {
+            SuggestionButton b = (SuggestionButton) suggestionsContainer.getChildren().getFirst();
+            Address a = b.getAddress();
+            goToAddress(a);
+        }
+    }
+
+    void onCanvasScroll(ScrollEvent e) {
+        double factor = Math.pow(1.004,e.getDeltaY());
+        canvas.getMapRenderer().zoom(factor,e.getX(),e.getY(), canvas);
+    }
+
+    void onCanvasMouseReleased(MouseEvent e) {
+        if (!hasBeenDragged && shouldPan) {
+            placePin();
+        }
+        if (!shouldPan) {
+            Point2D end = new Point2D(e.getX(), e.getY());
+            zoomToArea(end);
+        }
+
+        shouldPan = true;
+        hasBeenDragged = false;
+        canvas.getMapRenderer().setDraggedSquare(null, canvas);
+    }
+
+    void onCanvasMouseDragged(MouseEvent e) {
+        hasBeenDragged = true;
+
+        if (shouldPan) {
+            canvas.getMapRenderer().pan(e.getX() - lastMouse.getX(), e.getY() - lastMouse.getY(), canvas);
+            lastMouse = new Point2D(e.getX(), e.getY());
+        } else {
+            setLinePathForDrawedSquare(e);
+        }
+    }
+
+    void onCanvasMousePressed(MouseEvent e) {
+        lastMouse = new Point2D(e.getX(), e.getY());
+    }
+
+    void onWindowShown(WindowEvent windowEvent) {
+        setDefaultMap();
+
+        poiController.loadPointsOfInterest();
+        for (PointOfInterest poi : PointsOfInterestController.getPointsOfInterest()) {
+            addItemToMyPoints(poi);
+        }
     }
 
     private Tooltip setupTooltip(String message){
@@ -357,7 +398,7 @@ public class MainController {
             }
         });
         b.focusedProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal) {
+            if (newVal != null && newVal) {
                 Address a = b.getAddress();
                 searchField.setText(a.toString());
                 peekAddress(a);
@@ -421,7 +462,7 @@ public class MainController {
         boolean shortestRoute = selectedShortFastButton.getText().equals("Shortest");
 
         Node startNode = model.getRoadKDTree().nearestNeighborForEdges(startPoint, vehicle);
-        Node destinationNode = ((Node) model.getRoadKDTree().nearestNeighborForEdges(destinationPoint, vehicle));
+        Node destinationNode = model.getRoadKDTree().nearestNeighborForEdges(destinationPoint, vehicle);
         canvas.getMapRouteManager().setStartDestPoint(startNode, destinationNode);
 
         long startRoadId = startNode.getAsLong();
@@ -437,8 +478,8 @@ public class MainController {
             Parent root = fxmlLoader.load();
             helpStage.setTitle("Help");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(resourceLoader.getViewResource(styleCss).toExternalForm());
-            helpStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream(bongIcon)));
+            scene.getStylesheets().add(resourceLoader.getViewResource(STYLE_CSS).toExternalForm());
+            helpStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream(BONG_ICON)));
             helpStage.setScene(scene);
             helpStage.show();
         } catch (Exception ex) {
@@ -453,8 +494,8 @@ public class MainController {
             Parent root = fxmlLoader.load();
             aboutStage.setTitle("About");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(resourceLoader.getViewResource(styleCss).toExternalForm());
-            aboutStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream(bongIcon)));
+            scene.getStylesheets().add(resourceLoader.getViewResource(STYLE_CSS).toExternalForm());
+            aboutStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream(BONG_ICON)));
             aboutStage.setScene(scene);
             aboutStage.show();
         } catch (Exception ex) {
@@ -471,8 +512,8 @@ public class MainController {
             Parent root = fxmlLoader.load();
             devStage.setTitle("dev tools");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(resourceLoader.getViewResource(styleCss).toExternalForm());
-            devStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream(bongIcon)));
+            scene.getStylesheets().add(resourceLoader.getViewResource(STYLE_CSS).toExternalForm());
+            devStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream(BONG_ICON)));
             devStage.setScene(scene);
             devStage.show();
         } catch (Exception ex) {
@@ -542,29 +583,29 @@ public class MainController {
         myPoints.getItems().add(item);
     }
 
-    private void zoomToArea(Point2D end) {
+    void zoomToArea(Point2D end) {
         try {
             Point2D inversedStart = canvas.getMapRenderer().getTrans().inverseTransform(lastMouse.getX(), lastMouse.getY());
             Point2D inversedEnd = canvas.getMapRenderer().getTrans().inverseTransform(end.getX(), end.getY());
             Point2D centerPoint = new Point2D((inversedEnd.getX() + inversedStart.getX()) / 2, (inversedEnd.getY() + inversedStart.getY()) / 2);
-            double factor = getFactor(end);
+            double factor = getZoomFactor(end);
             canvas.getMapRenderer().zoomToPoint(factor, (float) centerPoint.getX(), (float) centerPoint.getY(), canvas);
         } catch (NonInvertibleTransformException e) {
-            AlertController.showError("Unexpected error", "Could not zoom to area", e);
+            AlertController.showError("Could not zoom to area", e);
         } catch (Exception e){
-            AlertController.showError("Unexpected error", e.toString(), e);
+            AlertController.showError(e.getMessage(), e);
         }
     }
 
-    public double getFactor(Point2D end) {
+    double getZoomFactor(Point2D end) {
         double windowAspectRatio = canvas.getWidth() / canvas.getHeight();
         double markedAspectRatio = (end.getX() - lastMouse.getX()) / (end.getY() - lastMouse.getY());
         double factor;
 
         if (windowAspectRatio < markedAspectRatio) {
-            factor = Math.abs((canvas.getWidth() / (end.getX() -  lastMouse.getX())) * canvas.getMapRenderer().getTrans().getMxx());
+            factor = Math.abs((canvas.getWidth() / (end.getX() - lastMouse.getX())) * canvas.getMapRenderer().getTrans().getMxx());
         } else {
-            factor = Math.abs((canvas.getHeight() / (end.getY() -  lastMouse.getY()) * canvas.getMapRenderer().getTrans().getMxx()));
+            factor = Math.abs((canvas.getHeight() / (end.getY() - lastMouse.getY()) * canvas.getMapRenderer().getTrans().getMxx()));
         }
         if (factor > 2.2) {
             factor = 2.2;
@@ -573,23 +614,23 @@ public class MainController {
     }
 
     public void setPOIButton() {
-        AtomicBoolean POIExists = new AtomicBoolean(false);
+        AtomicBoolean poiExists = new AtomicBoolean(false);
 
         if (poiController.POIContains(canvas.getMapPinManager().getCurrentPin().getCenterX(), canvas.getMapPinManager().getCurrentPin().getCenterY())) {
-            POIExists.set(true);
+            poiExists.set(true);
 
             POIButton.setTooltip(setupTooltip("Remove point of interest"));
             POIButton.getStyleClass().removeAll("POIButton-add");
             POIButton.getStyleClass().add("POIButton-remove");
         } else {
-            POIExists.set(false);
+            poiExists.set(false);
             POIButton.setTooltip(setupTooltip("Add to points of interest"));
             POIButton.getStyleClass().removeAll("POIButton-remove");
             POIButton.getStyleClass().add("POIButton-add");
         }
 
         POIButton.setOnAction(e -> {
-            if (!POIExists.get()) {
+            if (!poiExists.get()) {
                 showAddPointDialog(currentPoint);
                 myPoints.getItems().clear();
                 poiController.loadPointsOfInterest();
@@ -598,7 +639,7 @@ public class MainController {
                 }
 
                 poiController.savePointsOfInterest();
-                POIExists.set(true);
+                poiExists.set(true);
                 setPOIButton();
             } else {
                 poiController.removePOI(canvas.getMapPinManager().getCurrentPin().getCenterX(), canvas.getMapPinManager().getCurrentPin().getCenterY());
@@ -606,7 +647,7 @@ public class MainController {
                 for (PointOfInterest poi : PointsOfInterestController.getPointsOfInterest()) {
                     addItemToMyPoints(poi);
                 }
-                POIExists.set(false);
+                poiExists.set(false);
                 setPOIButton();
             }
         });
@@ -749,8 +790,7 @@ public class MainController {
         } catch (ApplicationException ex) {
             AlertController.showError(ex);
         } catch (Exception ex) {
-            AlertController.showError("Unexpected error",
-                    "Something unexpected happened, please try again", ex);
+            AlertController.showError("Something unexpected happened, please try again", ex);
         }
         return false;
     }
