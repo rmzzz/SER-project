@@ -117,7 +117,9 @@ public class MapRenderer {
                 drawableRoute.draw(gc, this.pixelwidth, smartTrace);
             }
             for (Instruction instruction : routeModel.getInstructions()) {
-                instruction.getIndicator().draw(gc, this.pixelwidth);
+                Node node = instruction.getNode();
+                var indicator = new RouteInstructionIndicator(node.getLon(), node.getLat(), 1);
+                indicator.draw(gc, this.pixelwidth);
             }
         }
     }
