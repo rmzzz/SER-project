@@ -14,32 +14,32 @@ public class FileController {
     }
 
     public static void saveBinary(File file, Serializable toBeSaved) throws IOException {
-        ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
-        oos.writeObject(toBeSaved);
-        oos.close();
+        try (ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
+            oos.writeObject(toBeSaved);
+        }
     }
 
     public static File loadZip(File file) throws Exception {
         String fileName = "";
         byte[] buffer = new byte[1024];
-        ZipInputStream zis = new ZipInputStream(new FileInputStream(file.getAbsolutePath()));
-        ZipEntry zipEntry = zis.getNextEntry();
         File destDir = getDataDir();
 
-        while (zipEntry != null) {
-            File newFile = new File(destDir, zipEntry.getName());
-            fileName = newFile.getName();
-            FileOutputStream fos = new FileOutputStream(newFile);
-            int len;
-            while ((len = zis.read(buffer)) > 0) {
-                fos.write(buffer, 0, len);
-            }
-            fos.close();
-            zipEntry = zis.getNextEntry();
-        }
-        zis.closeEntry();
-        zis.close();
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(file.getAbsolutePath()))) {
+            ZipEntry zipEntry = zis.getNextEntry();
 
+            while (zipEntry != null) {
+                File newFile = new File(destDir, zipEntry.getName());
+                fileName = newFile.getName();
+
+                try (FileOutputStream fos = new FileOutputStream(newFile)) {
+                    int len;
+                    while ((len = zis.read(buffer)) > 0) {
+                        fos.write(buffer, 0, len);
+                    }
+                }
+                zipEntry = zis.getNextEntry();
+            }
+        }
         return new File(destDir, fileName);
     }
 

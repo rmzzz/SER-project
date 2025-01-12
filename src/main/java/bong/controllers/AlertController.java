@@ -4,6 +4,7 @@ import bong.exceptions.ApplicationException;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.transform.NonInvertibleTransformException;
 
 import java.util.Optional;
 
@@ -21,6 +22,10 @@ public class AlertController {
             }
             alert.showAndWait();
         }
+    }
+
+    public static void showError(String text, Throwable error) {
+        showError("Unexpected error", text, error);
     }
 
     public static void showError(ApplicationException appError) {

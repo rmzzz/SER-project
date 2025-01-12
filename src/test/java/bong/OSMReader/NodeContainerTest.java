@@ -65,6 +65,7 @@ public class NodeContainerTest {
         for(int i = 0; i < 12; i++){
             ndc.add(i, 0,0);
         }
+        assertEquals(12, ndc.getSize());
     }
 
     @Test
@@ -79,5 +80,6 @@ public class NodeContainerTest {
         ndc.add(0,0,0);
         ndc.get(0);
         ndc.add(1,0,0);
+        assertEquals(2, ndc.getSize());
     }
 }
