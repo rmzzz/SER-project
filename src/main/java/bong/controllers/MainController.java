@@ -53,8 +53,8 @@ public class MainController {
     PointsOfInterestController poiController;
     SearchController searchController;
     RouteController routeController;
-    private final String style_css = "style.css";
-    private final String bong_icon = "bongIcon.png";
+    private final String styleCss = "style.css";
+    private final String bongIcon = "bongIcon.png";
 
     private ToggleGroup vehicleGroup = new ToggleGroup();
     @FXML private RadioButton carButton;
@@ -335,8 +335,6 @@ public class MainController {
         ArrayList<Address> best = tempBest;
         ArrayList<SuggestionButton> bs = new ArrayList<>();
         for (Address address : best) {
-            String addressString = address.toString();
-
                 SuggestionButton b = setUpSuggestionButton(address);
                 bs.add(b);
         }
@@ -439,8 +437,8 @@ public class MainController {
             Parent root = fxmlLoader.load();
             helpStage.setTitle("Help");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(resourceLoader.getViewResource(style_css).toExternalForm());
-            helpStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream(bong_icon)));
+            scene.getStylesheets().add(resourceLoader.getViewResource(styleCss).toExternalForm());
+            helpStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream(bongIcon)));
             helpStage.setScene(scene);
             helpStage.show();
         } catch (Exception ex) {
@@ -455,8 +453,8 @@ public class MainController {
             Parent root = fxmlLoader.load();
             aboutStage.setTitle("About");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(resourceLoader.getViewResource(style_css).toExternalForm());
-            aboutStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream(bong_icon)));
+            scene.getStylesheets().add(resourceLoader.getViewResource(styleCss).toExternalForm());
+            aboutStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream(bongIcon)));
             aboutStage.setScene(scene);
             aboutStage.show();
         } catch (Exception ex) {
@@ -473,8 +471,8 @@ public class MainController {
             Parent root = fxmlLoader.load();
             devStage.setTitle("dev tools");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(resourceLoader.getViewResource(style_css).toExternalForm());
-            devStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream(bong_icon)));
+            scene.getStylesheets().add(resourceLoader.getViewResource(styleCss).toExternalForm());
+            devStage.getIcons().add(new Image(resourceLoader.getViewResourceAsStream(bongIcon)));
             devStage.setScene(scene);
             devStage.show();
         } catch (Exception ex) {
