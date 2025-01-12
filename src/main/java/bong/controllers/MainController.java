@@ -43,7 +43,7 @@ public class MainController {
     private Stage stage;
     private ResourceLoader resourceLoader;
     private Model model;
-    private Point2D lastMouse;
+    Point2D lastMouse;
     private ArrayList<Address> tempBest = new ArrayList<>();
     private boolean hasBeenDragged = false;
     private Address destinationAddress;
@@ -65,7 +65,7 @@ public class MainController {
     @FXML private RadioButton shortButton;
     @FXML private RadioButton fastButton;
 
-    private MapCanvas canvas;
+    MapCanvas canvas;
     private boolean shouldPan = true;
     private boolean showStreetOnHover = false;
 
