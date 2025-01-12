@@ -10,6 +10,7 @@ import bong.exceptions.ApplicationException;
 import bong.exceptions.FileTypeNotSupportedException;
 import bong.routeFinding.Instruction;
 import bong.util.ResourceLoader;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -21,6 +22,7 @@ import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -138,200 +140,216 @@ public class MainController {
 
         mainView.setDisable(true);
         mainView.setFocusTraversable(false);
-        stage.addEventHandler(WindowEvent.WINDOW_SHOWN, e -> {
-            setDefaultMap();
+        stage.addEventHandler(WindowEvent.WINDOW_SHOWN, this::onWindowShown);
 
-            poiController.loadPointsOfInterest();
-            for (PointOfInterest poi : PointsOfInterestController.getPointsOfInterest()) {
-                addItemToMyPoints(poi);
-            }
-        });
-
-        loadClick.setOnAction((ActionEvent e) -> {
-            loadFileOnClick();
-        });
+        loadClick.setOnAction(e -> loadFileOnClick());
 
         canvas = mapCanvasWrapper.mapCanvas;
         routeController = new RouteController(model, canvas);
 
-        canvas.setOnMousePressed(e -> {
-            lastMouse = new Point2D(e.getX(), e.getY());
-        });
+        canvas.setOnMousePressed(this::onCanvasMousePressed);
+        canvas.setOnMouseDragged(this::onCanvasMouseDragged);
+        canvas.setOnMouseReleased(this::onCanvasMouseReleased);
+        canvas.setOnScroll(this::onCanvasScroll);
 
-        canvas.setOnMouseDragged(e -> {
-            hasBeenDragged = true;
+        loadDefaultMap.setOnAction(e -> setDefaultMap());
 
-            if (shouldPan) {
-                canvas.getMapRenderer().pan(e.getX() - lastMouse.getX(), e.getY() - lastMouse.getY(), canvas);
-                lastMouse = new Point2D(e.getX(), e.getY());
-            } else {
-                setLinePathForDrawedSquare(e);
-            }
-        });
+        loadDenmark.setOnAction(e -> setMapBinaryFromPath("denmark"));
 
-        canvas.setOnMouseReleased(e -> {
-            if (!hasBeenDragged && shouldPan) {
-                placePin();
-            }
-            if (!shouldPan) {
-                Point2D end = new Point2D(e.getX(), e.getY());
-                zoomToArea(end);
-            }
+        initWelcomeOverlay();
 
-            shouldPan = true;
-            hasBeenDragged = false;
-            canvas.getMapRenderer().setDraggedSquare(null, canvas);
-        });
+        saveAs.setOnAction(this::saveFileOnClick);
 
-        loadDefaultMap.setOnAction(e -> {
-            setDefaultMap();
-        });
+        devtools.setOnAction(this::onDevToolsAction);
 
-        loadDenmark.setOnAction(e -> {
-            setMapBinaryFromPath("denmark");
-        });
+        publicTransport.setSelected(true);
+        publicTransport.setOnAction(e -> updateShowPublicTransport(publicTransport.isSelected()));
 
+        darkMode.setSelected(false);
+        darkMode.setOnAction(this::onDarkModeAction);
+
+        hoverToShowStreet.setSelected(showStreetOnHover);
+        hoverToShowStreet.setOnAction(this::onHoverToShowStreetAction);
+
+        zoomToArea.setOnAction(e -> shouldPan = false);
+
+        about.setOnAction(e -> openAbout());
+
+        help.setOnAction(e -> openHelp());
+
+        setAsDestination.setTooltip(setupTooltip("Set as destination"));
+        setAsDestination.setOnAction(this::onSetAsDestinationAction);
+
+        setAsStart.setTooltip(setupTooltip("Set as start"));
+        setAsStart.setOnAction(this::onSetAsStartAction);
+
+        pinInfoClose.setOnAction(this::onPinInfoCloseAction);
+
+        findRoute.setOnAction(this::onFindRouteAction);
+
+        canvas.setOnMouseMoved(this::onCanvasMouseMoved);
+
+        swap.setOnAction(e -> swapStartAndDestination());
+
+        setRouteOptionButtons();
+
+        searchField.focusedProperty().addListener(this::onSearchFieldFocusedChanged);
+        searchField.textProperty().addListener(this::onSearchFieldTextChanged);
+        searchField.addEventFilter(KeyEvent.KEY_PRESSED, this::onSearchFieldKeyPressed);
+        searchField.setOnAction(this::onSearchFieldAction);
+    }
+
+    void initWelcomeOverlay() {
         welcomeDenmark.setOnAction(e -> {
             setMapBinaryFromPath("denmark");
             closeWelcomeOverlay();
         });
 
-        welcomeCopenhagen.setOnAction(e -> {
-            closeWelcomeOverlay();
-        });    
+        welcomeCopenhagen.setOnAction(e -> closeWelcomeOverlay());
 
         welcomeCustom.setOnAction(e -> {
-            if(loadFileOnClick()) {
+            if (loadFileOnClick()) {
                 closeWelcomeOverlay();
             }
         });
+    }
 
-      
+    void onDevToolsAction(ActionEvent event) {
+        Optional<ButtonType> result = AlertController.showConfirmation("Open dev tools?",
+                "Dev tools are only supposed to be used by developers or advanced users");
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            openDevTools();
+        }
+    }
 
-        saveAs.setOnAction(this::saveFileOnClick);
+    void onDarkModeAction(ActionEvent event) {
+        canvas.getMapRenderer().setUseRegularColors(!darkMode.isSelected(), canvas);
+    }
 
-        canvas.setOnScroll(e -> {
-            double factor = Math.pow(1.004,e.getDeltaY());
-            canvas.getMapRenderer().zoom(factor,e.getX(),e.getY(), canvas);
-        });
+    void onHoverToShowStreetAction(ActionEvent event) {
+        showStreetOnHover = hoverToShowStreet.isSelected();
+        canvas.getMapRenderer().repaint(canvas);
+    }
 
-        devtools.setOnAction(e -> {
-            Optional<ButtonType> result = AlertController.showConfirmation("Open dev tools?",
-                    "Dev tools are only supposed to be used by developers or advanced users");
-            if (result.isPresent() && result.get() == ButtonType.OK) {
-                openDevTools();
-            }
-        });
+    void onSetAsDestinationAction(ActionEvent event) {
+        routeController.clearRoute();
+        destinationAddress = currentAddress;
+        destinationPoint = currentPoint;
+        canvas.getMapRouteManager().setRouteDestination(destinationPoint, canvas);
+        showDirectionsMenu();
+    }
 
-        publicTransport.setSelected(true);
-        publicTransport.setOnAction(e -> {
-            updateShowPublicTransport(publicTransport.isSelected());
-        });
+    void onSetAsStartAction(ActionEvent event) {
+        routeController.clearRoute();
+        startAddress = currentAddress;
+        startPoint = currentPoint;
+        canvas.getMapRouteManager().setRouteOrigin(startPoint, canvas);
+        showDirectionsMenu();
+    }
 
-        darkMode.setSelected(false);
-        darkMode.setOnAction(e -> {
-            canvas.getMapRenderer().setUseRegularColors(!darkMode.isSelected(), canvas);
-        });
+    void onPinInfoCloseAction(ActionEvent e) {
+        canvas.getMapPinManager().nullPin(canvas);
+        hidePinInfo();
+    }
 
-        hoverToShowStreet.setSelected(showStreetOnHover);
-        hoverToShowStreet.setOnAction(e -> {
-            showStreetOnHover = hoverToShowStreet.isSelected();
-            canvas.getMapRenderer().repaint(canvas);
-        });
-
-        zoomToArea.setOnAction(e ->  {
-            shouldPan = false;
-        });
-
-        about.setOnAction(e -> {
-            openAbout();
-        });
-
-        help.setOnAction(e -> {
-            openHelp();
-        });
-
-        setAsDestination.setTooltip(setupTooltip("Set as destination"));
-        setAsDestination.setOnAction(e -> {
-            routeController.clearRoute();
-            destinationAddress = currentAddress;
-            destinationPoint = currentPoint;
-            canvas.getMapRouteManager().setRouteDestination(destinationPoint, canvas);
+    void onFindRouteAction(ActionEvent event) {
+        try {
+            findRouteFromGivenInputs();
             showDirectionsMenu();
-        });
-
-        setAsStart.setTooltip(setupTooltip("Set as start"));
-        setAsStart.setOnAction(e -> {
+        } catch (Exception ex) {
+            routeInfo.setVisible(false);
+            routeInfo.setManaged(false);
+            noRouteFound.setVisible(true);
+            noRouteFound.setManaged(true);
             routeController.clearRoute();
-            startAddress = currentAddress;
-            startPoint = currentPoint;
-            canvas.getMapRouteManager().setRouteOrigin(startPoint, canvas);
-            showDirectionsMenu();
-        });
+            ex.printStackTrace();
+        }
+    }
 
-        pinInfoClose.setOnAction(e -> {
-            canvas.getMapPinManager().nullPin(canvas);
-            hidePinInfo();
-        });
+    void onCanvasMouseMoved(MouseEvent e) {
+        if (showStreetOnHover) {
+            canvas.getMapMouseInteraction().showStreetNearMouse(model, e, canvas);
+        }
+    }
 
-        findRoute.setOnAction(e -> {
-            try {
-                findRouteFromGivenInputs();
-                showDirectionsMenu();
-            } catch (Exception ex) {
-                routeInfo.setVisible(false);
-                routeInfo.setManaged(false);
-                noRouteFound.setVisible(true);
-                noRouteFound.setManaged(true);
-                routeController.clearRoute();
-                ex.printStackTrace();
-            }
-        });
+    void onSearchFieldFocusedChanged(ObservableValue<?> obs, Boolean oldVal, Boolean newVal) {
+        if (newVal) {
+            searchField.setText(searchController.getCurrentQuery());
+        }
+    }
 
-        canvas.setOnMouseMoved(e -> {
-            if (showStreetOnHover) {
-                canvas.getMapMouseInteraction().showStreetNearMouse(model, e, canvas);
-            }
-        });
+    void onSearchFieldTextChanged(ObservableValue<?> obs, String oldVal, String newVal) {
+        hidePinInfo();
+        if (searchField.isFocused()) {
+            setCurrentQuery(searchField.getText().trim());
+        }
+        if (searchField.getText().isEmpty()) {
+            suggestionsContainer.getChildren().clear();
+        }
+        canvas.getMapPinManager().nullPin(canvas);
+    }
 
-        swap.setOnAction(e -> {
-            swapStartAndDestination();
-        });
-
-        setRouteOptionButtons();
-
-        searchField.focusedProperty().addListener((obs,oldVal,newVal) -> {
-            if (newVal) {
-                searchField.setText(searchController.getCurrentQuery());
-            }
-        });
-
-        searchField.textProperty().addListener((obs,oldVal,newVal) -> {
-            hidePinInfo();
-            if (searchField.isFocused()) setCurrentQuery(searchField.getText().trim());
-            if (searchField.getText().isEmpty()) suggestionsContainer.getChildren().clear();
-            canvas.getMapPinManager().nullPin(canvas);
-        });
-
-        searchField.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (event.getCode() == KeyCode.TAB) {
-                event.consume();
-            }
-            if (event.getCode() == KeyCode.DOWN) {
-                if(!suggestionsContainer.getChildren().isEmpty()) {
-                    suggestionsContainer.getChildren().getFirst().requestFocus();
-                }
-                event.consume();
-            }
-        });
-
-        searchField.setOnAction(e -> {
+    void onSearchFieldKeyPressed(KeyEvent event) {
+        if (event.getCode() == KeyCode.TAB) {
+            event.consume();
+        }
+        if (event.getCode() == KeyCode.DOWN) {
             if(!suggestionsContainer.getChildren().isEmpty()) {
-                SuggestionButton b = (SuggestionButton) suggestionsContainer.getChildren().getFirst();
-                Address a = b.getAddress();
-                goToAddress(a);
+                suggestionsContainer.getChildren().getFirst().requestFocus();
             }
-        });
+            event.consume();
+        }
+    }
+
+    void onSearchFieldAction(ActionEvent e) {
+        if(!suggestionsContainer.getChildren().isEmpty()) {
+            SuggestionButton b = (SuggestionButton) suggestionsContainer.getChildren().getFirst();
+            Address a = b.getAddress();
+            goToAddress(a);
+        }
+    }
+
+    void onCanvasScroll(ScrollEvent e) {
+        double factor = Math.pow(1.004,e.getDeltaY());
+        canvas.getMapRenderer().zoom(factor,e.getX(),e.getY(), canvas);
+    }
+
+    void onCanvasMouseReleased(MouseEvent e) {
+        if (!hasBeenDragged && shouldPan) {
+            placePin();
+        }
+        if (!shouldPan) {
+            Point2D end = new Point2D(e.getX(), e.getY());
+            zoomToArea(end);
+        }
+
+        shouldPan = true;
+        hasBeenDragged = false;
+        canvas.getMapRenderer().setDraggedSquare(null, canvas);
+    }
+
+    void onCanvasMouseDragged(MouseEvent e) {
+        hasBeenDragged = true;
+
+        if (shouldPan) {
+            canvas.getMapRenderer().pan(e.getX() - lastMouse.getX(), e.getY() - lastMouse.getY(), canvas);
+            lastMouse = new Point2D(e.getX(), e.getY());
+        } else {
+            setLinePathForDrawedSquare(e);
+        }
+    }
+
+    void onCanvasMousePressed(MouseEvent e) {
+        lastMouse = new Point2D(e.getX(), e.getY());
+    }
+
+    void onWindowShown(WindowEvent windowEvent) {
+        setDefaultMap();
+
+        poiController.loadPointsOfInterest();
+        for (PointOfInterest poi : PointsOfInterestController.getPointsOfInterest()) {
+            addItemToMyPoints(poi);
+        }
     }
 
     private Tooltip setupTooltip(String message){
@@ -367,9 +385,7 @@ public class MainController {
 
     private SuggestionButton setUpSuggestionButton(Address address, String addressString) {
         SuggestionButton b = new SuggestionButton(address);
-        b.setOnAction(e -> {
-            goToAddress(b.getAddress());
-        });
+        b.setOnAction(e -> goToAddress(b.getAddress()));
         b.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.TAB) {
                 setCurrentQuery(((SuggestionButton) event.getSource()).getAddress().toString());
@@ -417,12 +433,8 @@ public class MainController {
         walkButton.setUserData("Walk");
         carButton.setSelected(true);
 
-        bikeButton.setOnAction(e -> {
-            disableShortFastChoice();
-        });
-        walkButton.setOnAction(e -> {
-            disableShortFastChoice();
-        });
+        bikeButton.setOnAction(e -> disableShortFastChoice());
+        walkButton.setOnAction(e -> disableShortFastChoice());
         carButton.setOnAction(e -> {
             shortButton.setDisable(false);
             fastButton.setDisable(false);
@@ -579,22 +591,28 @@ public class MainController {
             inversedEnd = canvas.getMapRenderer().getTrans().inverseTransform(end.getX(), end.getY());
         } catch (NonInvertibleTransformException e) {
             AlertController.showError("Unexpected error", "Could not zoom to area", e);
+            return;
         }
         Point2D centerPoint = new Point2D((inversedEnd.getX() + inversedStart.getX()) / 2, (inversedEnd.getY() + inversedStart.getY()) / 2);
 
+        var factor = getZoomFactor(end);
+        canvas.getMapRenderer().zoomToPoint(factor, (float) centerPoint.getX(), (float) centerPoint.getY(), canvas);
+    }
+
+    double getZoomFactor(Point2D end) {
         double windowAspectRatio = canvas.getWidth() / canvas.getHeight();
         double markedAspectRatio = (end.getX() - lastMouse.getX()) / (end.getY() - lastMouse.getY());
         double factor;
 
         if (windowAspectRatio < markedAspectRatio) {
-            factor = Math.abs((canvas.getWidth() / (end.getX() -  lastMouse.getX())) * canvas.getMapRenderer().getTrans().getMxx());
+            factor = Math.abs((canvas.getWidth() / (end.getX() - lastMouse.getX())) * canvas.getMapRenderer().getTrans().getMxx());
         } else {
-            factor = Math.abs((canvas.getHeight() / (end.getY() -  lastMouse.getY()) * canvas.getMapRenderer().getTrans().getMxx()));
+            factor = Math.abs((canvas.getHeight() / (end.getY() - lastMouse.getY()) * canvas.getMapRenderer().getTrans().getMxx()));
         }
         if (factor > 2.2) {
             factor = 2.2;
         }
-        canvas.getMapRenderer().zoomToPoint(factor, (float) centerPoint.getX(), (float) centerPoint.getY(), canvas);
+        return factor;
     }
 
     public void setPOIButton() {
@@ -695,9 +713,7 @@ public class MainController {
             for (Instruction instruction : instructions) {
                 Button button = new Button(instruction.getInstruction());
                 button.getStyleClass().add("instruction");
-                button.setOnAction(e -> {
-                    canvas.getMapRenderer().zoomToNode(instruction.getNode(), canvas);
-                });
+                button.setOnAction(e -> canvas.getMapRenderer().zoomToNode(instruction.getNode(), canvas));
                 directions.getChildren().add(button);
             }
             routeDistance.setText(routeController.distanceString());
