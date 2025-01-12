@@ -583,7 +583,7 @@ public class MainController {
         myPoints.getItems().add(item);
     }
 
-    private void zoomToArea(Point2D end) {
+    void zoomToArea(Point2D end) {
         Point2D inversedStart = null;
         Point2D inversedEnd = null;
         try {

@@ -3,7 +3,6 @@ package bong.controllers;
 import bong.canvas.MapCanvas;
 import bong.canvas.MapRenderer;
 import javafx.geometry.Point2D;
-import javafx.scene.canvas.Canvas;
 import javafx.scene.transform.Affine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,5 +52,19 @@ class MainControllerUnitTest {
         double res = mainController.getZoomFactor(point);
 
         assertEquals(1.0, res);
+    }
+
+    @Test
+    void zoomToArea() {
+        Point2D point = new Point2D(100, 100);
+        mainController.lastMouse  = new Point2D(0, 0);
+        when(mapCanvas.getWidth()).thenReturn(100.0);
+        when(mapCanvas.getHeight()).thenReturn(100.0);
+        Affine affine = new Affine();
+        when(mapRenderer.getTrans()).thenReturn(affine);
+
+        mainController.zoomToArea(point);
+
+        verify(mapRenderer).zoomToPoint(anyDouble(), anyFloat(), anyFloat(), any());
     }
 }
